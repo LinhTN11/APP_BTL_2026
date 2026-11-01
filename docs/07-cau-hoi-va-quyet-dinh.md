@@ -15,6 +15,8 @@ Ngày: 01/11/2026 (Asia/Saigon). Các dòng `Dxx` ghi quyết định có căn c
 | D07 | Android là nền tảng chính | USER bổ sung | Ưu tiên Android, không chặn demo vì thiếu iPhone/Mac; glass cần fallback phù hợp Android |
 | D08 | Nhóm có 1 BE là người dùng và 1 FE; BE cần xong hôm nay 01/11/2026; FE có một ngày làm riêng | USER bổ sung | Kế hoạch ngày BE ưu tiên core end-to-end và handoff; full backlog 37 chức năng tách các phase sau, không hứa đủ mọi live integration trong một ngày |
 | D09 | Dịch vụ miễn phí làm thật, dịch vụ trả phí mô phỏng | USER bổ sung | Local DB/chat/rule/quiz và năng lực thiết bị làm thật trong phase tương ứng; từng provider phải kiểm quota/điều kiện/cấu hình, phần trả phí có adapter demo và nhãn |
+| D10 | Bắt buộc React Native Community CLI, không Expo; thay thế phương án Expo trước đây | USER, 01/11/2026 | Native Android/iOS projects, Android SDK/JDK/Gradle/ADB và Metro; khóa stable RN/CLI/React qua package-lock, không dùng Expo Router/module expo-* |
+| D11 | Sau kiểm tra cho phép triển khai core P01–P05 bằng subagent theo ownership | USER, 01/11/2026 | Đang triển khai Fastify/SQLite + UI-test BE theo docs08; không phải duyệt visual FE-product hay cam kết xong 37F/60 màn/12 phase hôm nay |
 
 ## 2. Câu hỏi theo thời điểm phải chốt
 
@@ -23,7 +25,7 @@ Ngày: 01/11/2026 (Asia/Saigon). Các dòng `Dxx` ghi quyết định có căn c
 | Q01 | **Đã giải đáp về deadline và nhân sự:** 1 BE xong ngày 01/11/2026, 1 FE làm một ngày riêng. Còn thiếu số giờ thực tế có thể làm hôm nay | Không quy đổi một ngày thành cam kết 37 tích hợp; dùng kế hoạch core và điểm cắt giờ | Lập lịch giờ nếu cần | D08 |
 | Q02 | Giảng viên yêu cầu đủ 3 phần hay chấm chủ yếu Phần 1? Phải có tích hợp thật nào? | Core end-to-end trước, mọi chức năng còn lại giữ roadmap; adapter demo có nhãn | Cam kết scope và tiêu chí nộp | F01–F37 |
 | Q03 | **Đã giải đáp: Android chính.** Chỉ cần bổ sung mẫu máy/Android version nếu có để kiểm hiệu ứng và quyền thiết bị | Android thật hoặc emulator là tiêu chí demo; kiểm native iOS riêng sau nếu có nhu cầu | QA thiết bị | D07 |
-| Q04 | Chấp nhận Node backend + SQLite cục bộ hay muốn cloud dùng chung? | Node/Fastify/SQLite, một tiến trình BE, seed tự chạy; cloud là tùy chọn sau | Schema/bootstrap | D02 |
+| Q04 | Đã cho phép triển khai core local Fastify + SQLite theo D11; cloud dùng chung là tùy chọn riêng | Node/Fastify/SQLite, một tiến trình BE, seed tự chạy; cloud là tùy chọn sau | Schema/bootstrap | D02 |
 | Q05 | Chỉ 18+ và dùng dữ liệu mẫu được không? Có yêu cầu bảo mật/điều khoản riêng của trường không? | 18+, fixture có quyền dùng, không dữ liệu nhạy cảm thật trong demo | Auth/onboarding | F01, F06 |
 | Q06 | Đã có Google OAuth client ID, redirect URI, package name và cấu hình social provider nào chưa? | Theo D09: provider miễn phí làm thật khi đủ config; SMS/dịch vụ trả phí mô phỏng; chưa có config hiển thị rõ chưa cấu hình | Tích hợp live auth | F01, D09 |
 | Q07 | “Chính chủ” là xác nhận đang kiểm soát số điện thoại hay phải đối soát danh tính thuê bao? | OTP chỉ tạo `phone_verified`; không dùng nhãn danh tính pháp lý | F11 live/nhãn badge | F11 |
@@ -75,6 +77,6 @@ Trạng thái: chờ triển khai / đã triển khai và kiểm tra
 - **Phạm vi lớn:** 37 dòng gồm nhiều tích hợp ngoài; deadline BE đã chốt hôm nay 01/11/2026 nên ưu tiên core thực và bàn giao, không hứa hoàn thành mọi live provider trong một ngày.
 - **Demo dễ bị hiểu nhầm là live:** phải có nhãn và tách trạng thái kiểm tra provider, đặc biệt OTP, selfie, AI, SOS và entitlement.
 - **Apple Liquid Glass phụ thuộc nền tảng:** prototype web không chứng minh hiệu ứng native, cảm ứng, keyboard, VoiceOver hoặc hiệu năng thiết bị.
-- **Clone chạy ngay vẫn có điều kiện môi trường:** cần Node phiên bản phù hợp, cài dependency, thiết bị/Expo, mạng LAN/firewall; README và doctor phải nêu rõ, không yêu cầu bí mật cloud cho luồng demo.
+- **Clone chạy ngay vẫn có điều kiện môi trường:** cần Node phiên bản phù hợp, cài dependency, JDK/Android SDK, native build/install, thiết bị/ADB/Metro, mạng LAN/firewall; README và doctor phải nêu rõ, không yêu cầu bí mật cloud cho luồng demo.
 - **Nội dung nhạy cảm và vị trí:** phân quyền, consent, giới hạn lưu, báo cáo và kiểm duyệt phải cùng đi với tính năng; không để UI thử làm lộ tọa độ/ảnh gốc.
 - **Ẩn danh và xác minh:** không dùng các nhãn mạnh hơn bằng chứng kỹ thuật thực sự cung cấp.

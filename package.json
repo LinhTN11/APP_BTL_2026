@@ -1,0 +1,28 @@
+{
+  "name": "gap-dating-demo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "demo": "node scripts/demo.mjs",
+    "dev": "node scripts/demo.mjs --no-android",
+    "dev:api": "npm run dev --workspace @gap/api",
+    "dev:mobile": "npm run start --workspace @gap/mobile -- --host 0.0.0.0",
+    "android": "node scripts/android.mjs",
+    "test:api": "npm test --workspace @gap/api --",
+    "test:mobile": "npm test --workspace @gap/mobile -- --runInBand",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "verify": "npm run typecheck && npm run lint && npm run test:api && npm run test:mobile",
+    "smoke:demo": "node --import tsx scripts/smoke-demo.mjs"
+  }
+}

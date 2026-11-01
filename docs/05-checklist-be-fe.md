@@ -1,5 +1,7 @@
 # Checklist riêng cho backend, UI kiểm thử và frontend sản phẩm
 
+Trạng thái 01/11/2026: core P01–P05 đang triển khai theo D11; React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
+
 **Ngày:** 01/11/2026. **Trạng thái ban đầu:** toàn bộ implementation chưa bắt đầu; tài liệu/prototype không được dùng để đánh dấu backend hoặc màn RN đã hoàn thành.
 
 **Phân công đã chốt:** một BE là chủ dự án, cần ưu tiên demo trong hôm nay; một FE có một ngày làm riêng. Android là nền tảng chính. Roadmap đầy đủ có 37 chức năng F01–F37 và 60 màn/variant S01–S60; số lượng này không phải cam kết xong trong một ngày.

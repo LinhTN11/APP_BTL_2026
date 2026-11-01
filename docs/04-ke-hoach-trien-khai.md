@@ -4,13 +4,13 @@
 
 **Mục tiêu:** hoàn thành demo React Native có backend dùng thật trong demo, có thể chia sẻ mã nguồn và chạy lại từ bản clone sạch; đồng thời giữ lộ trình đầy đủ cho cả 37 chức năng trong tài liệu nguồn.
 
-**Kiến trúc đề xuất:** monorepo npm workspaces, ứng dụng Expo React Native, backend Fastify theo module, SQLite file và media lưu cục bộ. Các nhà cung cấp bên ngoài đi qua adapter; dịch vụ miễn phí làm thật khi có cấu hình cần thiết, dịch vụ trả phí mô phỏng minh bạch. Socket.IO phục vụ sự kiện chat, REST là nguồn dữ liệu có thể tải lại.
+**Kiến trúc áp dụng:** monorepo npm workspaces, ứng dụng React Native Community CLI, backend Fastify theo module, SQLite file và media lưu cục bộ. Các nhà cung cấp bên ngoài đi qua adapter; dịch vụ miễn phí làm thật khi có cấu hình cần thiết, dịch vụ trả phí mô phỏng minh bạch. Socket.IO phục vụ sự kiện chat, REST là nguồn dữ liệu có thể tải lại.
 
-**Tech stack:** TypeScript, Expo/React Native, Node.js 24 LTS, Fastify, SQLite qua `node:sqlite`, Socket.IO; phiên bản chính xác được khóa và kiểm tra tương thích tại P01. Không buộc cả nhóm tạo tài khoản cloud để chạy demo.
+**Tech stack:** TypeScript, React Native Community CLI, Node.js 24 LTS, Fastify, SQLite qua `node:sqlite`, Socket.IO; phiên bản chính xác được khóa và kiểm tra tương thích tại P01. Không buộc cả nhóm tạo tài khoản cloud để chạy demo.
 
 **Spec:** `docs/01-yeu-cau-san-pham.md`; nguồn đối chiếu: `docs/source/yeu-cau-goc.md`.
 
-**Ngày:** 01/11/2026, múi giờ Asia/Saigon. **Trạng thái:** roadmap để triển khai; chưa có backend hay ứng dụng được triển khai. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
+**Ngày:** 01/11/2026, múi giờ Asia/Saigon. **Trạng thái:** đang triển khai core P01–P05 theo D11; RN Community CLI đã chốt theo D10, visual FE-product chưa được duyệt. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
 
 **Nguồn lực đã được chủ dự án chốt:** Android là nền tảng chính; một người BE cần hoàn thành phần được ưu tiên trong hôm nay 01/11/2026, một người FE có một ngày làm riêng. Dịch vụ miễn phí ưu tiên tích hợp thật; dịch vụ trả phí dùng mô phỏng. [Kế hoạch một ngày](11-ke-hoach-mot-ngay.md) quyết định thứ tự/timebox cho bản demo; roadmap này giữ đầy đủ các phase và không cam kết hoàn thành 37 chức năng trong một ngày.
 
@@ -62,8 +62,9 @@ apps/
           identity,preferences,personality,music,icebreakers,
           dates,venues,assistant,explore,billing,calendar}/
   mobile/
-    app/                             # Route Expo Router
-    src/{api,components,features,theme}/
+    android/, ios/                   # Native projects Community CLI
+    App.tsx, index.js, metro.config.js
+    src/{api,components,features,navigation,theme}/
     src/features/dev-tools/           # FE-test; chỉ bật trong demo/dev
     test/                            # Component và flow quan trọng
 packages/contracts/src/              # Schema request/response/event dùng chung
@@ -79,7 +80,7 @@ Các module có thể gộp file nhỏ khi hợp lý; không tạo tầng reposi
 | Phase | Kết quả nhìn thấy | Phụ thuộc | Phạm vi chức năng |
 |---|---|---|---|
 | P00 | Docs, quyết định, prototype và API mẫu được duyệt | Thông tin nhóm/tiêu chí chấm | Tất cả F |
-| P01 | Clone sạch → setup → API + Expo + seed | P00 về stack | Nền tảng |
+| P01 | Clone sạch → setup → API + Metro + Android native + seed | D10/D11 + contract core | Nền tảng |
 | P02 | Đăng nhập, hồ sơ, media, trạng thái selfie | P01 | F01–F05 |
 | P03 | Tìm hồ sơ, like/pass, match, unmatch đúng quyền | P02 | F06–F08 |
 | P04 | Chat hai máy + vị trí + chặn/báo cáo tối thiểu | P03 | F09–F10, phần tối thiểu F19/F22/F24 |
@@ -90,6 +91,8 @@ Các module có thể gộp file nhỏ khi hợp lý; không tạo tầng reposi
 | P09 | AI mở lời/luyện tập, Explore và Vibe | P06–P08 theo dữ liệu | F29–F33 |
 | P10 | Boost, Plus/Gold, lịch trong chat | P09; quyền lợi chốt trước billing | F34–F37 |
 | P11 | FE-product, kiểm thử toàn hệ thống, bàn giao | Các phase thuộc phạm vi bản nộp | Toàn bộ phạm vi đã chọn |
+
+UI-test BE có thể triển khai ngay theo D11; T00.02 chỉ gate visual FE-product, không chặn core.
 
 **Mốc M1:** kết thúc P01, cả nhóm chạy được cùng seed. **Mốc M2:** kết thúc P05, demo core từ đăng nhập đến chat/unmatch/chặn, không giả là hoàn tất toàn bộ yêu cầu. **Mốc M3:** kết thúc P08, nhóm tính năng nâng cao và hỗ trợ hẹn hò. **Mốc M4:** kết thúc P11, bản nộp theo phạm vi đã được chủ dự án chốt.
 
@@ -152,10 +155,11 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **Contract:** đường dẫn chính `npm ci → npm run demo`; `demo` gọi setup/dev, giữ `npm run setup` và `npm run dev` riêng để debug; có `npm run doctor`, `npm run verify`. Setup idempotent, không ghi đè env người dùng, không xóa DB; reset là lệnh riêng có tên rõ ràng.
 
-- [ ] Tạo workspaces và khóa Expo/RN/Node/dependencies có tương thích thực tế; không dùng version `latest` trong bản bàn giao.
+- [ ] Tạo workspaces và khóa RN Community CLI/React/Node/dependencies có tương thích thực tế; không dùng version `latest` trong bản bàn giao.
 - [ ] Viết setup tạo env demo mặc định, thư mục data và migration/seed an toàn; thiếu công cụ phải báo cách cài cụ thể.
-- [ ] Dev khởi động API và Expo có dừng process con khi thoát; doctor kiểm tra Node, port, writable data, địa chỉ API và kết nối thiết bị.
-- [ ] Chạy bộ lệnh trên thư mục sạch có khoảng trắng; ghi số bước tay còn cần cho emulator/Expo Go và firewall LAN.
+- [ ] Kiểm tra JDK 17, Android SDK/platform-tools, adb; native build/install qua Gradle và reverse cổng 3000/8081 cho USB.
+- [ ] Dev khởi động API và Metro có dừng process con khi thoát; doctor kiểm tra Node, port, writable data, địa chỉ API và kết nối thiết bị.
+- [ ] Chạy bộ lệnh trên thư mục sạch có khoảng trắng; ghi số bước tay còn cần cho JDK/SDK/emulator/USB debugging, native build và firewall LAN.
 
 **Bằng chứng:** `docs/qa/clone-run.md` có log môi trường và thời gian đo thực tế. Không ghi “clone chạy luôn” nếu vẫn cần env bí mật hoặc sửa IP hardcode.
 
@@ -336,7 +340,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **Owner:** FE-test, M. **Phụ thuộc:** contract T00.03; có thể dựng khi BE làm P02–P04, nối thật sau mỗi task.
 
-**File:** `apps/mobile/app/(dev)/backend-lab.tsx`, `apps/mobile/src/features/dev-tools/{SessionPanel,ProfilePanel,DiscoveryPanel,MatchPanel,ChatPanel,SafetyPanel}.tsx`, `apps/mobile/src/api/client.ts`.
+**File:** `apps/mobile/src/features/dev-tools/BackendLab.tsx`, `apps/mobile/src/features/dev-tools/{SessionPanel,ProfilePanel,DiscoveryPanel,MatchPanel,ChatPanel,SafetyPanel}.tsx`, `apps/mobile/src/api/client.ts`.
 
 **Contract:** API client dùng schema chung, API URL cấu hình, trạng thái loading/error/retry; account switch xóa state gắn user, không dùng production UI làm công cụ bypass quyền.
 
@@ -374,7 +378,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 - [ ] Chốt ý nghĩa “chính chủ”: OTP chỉ xác nhận kiểm soát số, muốn chứng minh thuê bao cần provider/pháp lý và phạm vi riêng.
 - [ ] Viết test đổi số phải xác minh lại, OTP replay/hết hạn, token cũ bị thu hồi theo policy, không trùng số đã liên kết tài khoản khác.
-- [ ] Implement SecureStore + LocalAuthentication theo khả năng thiết bị; fallback về đăng nhập bình thường khi không có sensor, hủy prompt hoặc session server hết hạn.
+- [ ] Implement react-native-keychain với Keystore/Keychain và kiểm soát truy cập sinh trắc OS theo khả năng thiết bị; fallback về đăng nhập bình thường khi không có sensor, hủy prompt hoặc session server hết hạn.
 - [ ] Kiểm tra logout xóa khóa/session local và app resume không tự vượt auth chỉ vì biometric trả true.
 
 **Kiểm tra dự kiến:** `npm run test:api -- identity/phone`, `npm run test:mobile -- biometric`; biometric thực phải thử thiết bị phù hợp. **Chấp nhận:** UI không gắn nhãn xác thực thuê bao chỉ dựa OTP.
@@ -618,7 +622,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **Owner:** FE-product, M/H theo màn; QA review. **Phụ thuộc:** T00.02 và contract của từng chức năng. Thực hiện cuốn chiếu từ P02, không đợi tới cuối mới bắt đầu UI.
 
-**File:** `apps/mobile/app/**`, `apps/mobile/src/features/**`, `apps/mobile/src/components/{GlassSurface,AppButton,ScreenState}.tsx`, `apps/mobile/src/theme/**`, `docs/qa/ui-coverage.md`.
+**File:** `apps/mobile/src/navigation/**`, `apps/mobile/src/features/**`, `apps/mobile/src/components/{GlassSurface,AppButton,ScreenState}.tsx`, `apps/mobile/src/theme/**`, `docs/qa/ui-coverage.md`.
 
 **Contract:** mỗi screen ID trong docs UI có route, feature owner, trạng thái loading/empty/error/offline/permission denied khi áp dụng và reference API F tương ứng.
 

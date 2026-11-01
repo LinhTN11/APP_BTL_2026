@@ -13,10 +13,11 @@ Postman CLI is installed on this device, and can be used for API Engineering wor
 
 ## Ràng buộc đã được người dùng xác nhận
 
-- React Native bắt buộc, Android chính; UI theo Apple Liquid Glass với fallback Android rõ ràng.
+- React Native Community CLI bắt buộc, không dùng Expo hay module `expo-*`, Android chính; UI theo Apple Liquid Glass với fallback Android rõ ràng.
 - Một BE cần xong ngày 01/11/2026 (Asia/Saigon), một FE làm trong một ngày riêng. Ưu tiên luồng demo core; roadmap không phải cam kết xong 37 chức năng trong ngày.
 - Dịch vụ miễn phí ưu tiên làm thật; dịch vụ bắt buộc trả phí mô phỏng có nhãn. Chạy demo sau clone không phụ thuộc secret/cloud của tác giả.
 - Người dùng phụ trách BE. Được làm UI tối thiểu để BE bấm test; FE-product có checklist riêng, không tự nhận đã bàn giao FE đầy đủ.
+- Core P01–P05 đã được người dùng cho phép triển khai; UI-test phục vụ BE không chờ duyệt visual. Không coi việc cho phép code là duyệt FE-product.
 - Phải có prototype preview và ghi nhận người dùng chốt trước khi coi visual design là đã duyệt. Hiện tất cả thiết kế là bản nháp.
 
 ## Tài liệu bắt buộc theo phạm vi

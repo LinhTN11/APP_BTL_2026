@@ -18,7 +18,7 @@ Dùng thành phần hệ thống khi có thể: native navigation stack, action 
 
 ### Vật liệu theo nền tảng
 
-- iOS 26 trở lên: thẩm định `expo-glass-effect`/`GlassView`, kiểm tra khả năng runtime, sử dụng native material. [Expo GlassEffect](https://docs.expo.dev/versions/latest/sdk/glass-effect/) ghi rõ giới hạn iOS 26+ và fallback thành View trên nền tảng không hỗ trợ. Khóa phiên bản theo Expo SDK lúc scaffold; không lấy phiên bản tài liệu latest làm bằng chứng đã tương thích.
+- iOS native glass là enhancement nghiên cứu riêng bằng native module tương thích React Native Community CLI đã khóa; cần kiểm tra OS/runtime/native build. Không dùng module `expo-*`. Khi chưa có evidence, `GlassSurface` dùng fallback của dự án; không hứa native Liquid Glass.
 - **Android là baseline nghiệm thu chính.** Android/iOS cũ: component `GlassSurface` của dự án dùng nền đặc bán mờ/blur đã kiểm tra hiệu năng, viền và độ nổi nhẹ; giữ cấu trúc, kích thước và tương phản. Không hứa khúc xạ giống hệt iOS native.
 - Khi Reduce Transparency hoặc Increase Contrast bật: nền đặc, viền rõ, không phụ thuộc nhìn xuyên; trạng thái được biểu đạt bằng nhãn/icon.
 - Prototype HTML chỉ gần đúng qua CSS backdrop-filter, không chứng minh native Liquid Glass, hiệu năng RN hay thiết bị thực.
@@ -155,7 +155,7 @@ Theo [Apple HIG — Accessibility](https://developer.apple.com/design/human-inte
 
 ## 8. Quy trình prototype trước chốt
 
-Skill dự án: `.agents/skills/wireframes-mockups/SKILL.md` (bản cài cùng repo để nhóm clone có thể dùng). Các skill Expo hỗ trợ triển khai: `expo-native-ui`, `expo-ui`, `expo-animation`, `expo-router` trong `.agents/skills/`; đọc đúng skill theo tác vụ. Yêu cầu chủ dự án về Apple-inspired trên Android ưu tiên hơn ví dụ Material mặc định trong skill. Dùng để dựng flow/wireframe draw.io trước khi đầu tư hi-fi. Không coi skill là bằng chứng “Apple chuẩn”; nguồn Apple và kiểm thử native là chuẩn đối chiếu.
+Skill dự án: `.agents/skills/wireframes-mockups/SKILL.md` (bản cài cùng repo để nhóm clone có thể dùng). Stack bắt buộc React Native Community CLI theo D10; bốn skill Expo cũ đã ngừng áp dụng cho implementation. Dùng RN primitives, React Navigation và native modules tương thích bản khóa. Yêu cầu Apple-inspired trên Android giữ nguyên. Dùng để dựng flow/wireframe draw.io trước khi đầu tư hi-fi. Không coi skill là bằng chứng “Apple chuẩn”; nguồn Apple và kiểm thử native là chuẩn đối chiếu.
 
 1. Kiểm tra danh mục S01–S60 với yêu cầu nguồn, hợp nhất/tách màn nếu có lý do; chủ dự án duyệt hành trình và mức ưu tiên.
 2. Xem [sơ đồ luồng sửa được](prototype/flow.drawio), [preview SVG](prototype/flow.svg), rồi [prototype tương tác](prototype/index.html). Mở HTML trực tiếp bằng trình duyệt, không cần npm hay mạng.
@@ -178,4 +178,4 @@ Các quyết định cần chủ dự án bổ sung: tên/brand, thiết bị An
 
 ## 10. Nguồn và giới hạn chứng cứ
 
-Tra cứu 01/11/2026: [Apple Materials](https://developer.apple.com/design/human-interface-guidelines/materials), [Typography](https://developer.apple.com/design/human-interface-guidelines/typography), [Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility), [Expo GlassEffect](https://docs.expo.dev/versions/latest/sdk/glass-effect/). Apple có bản `.md` cùng đường dẫn để đọc bằng công cụ. Token màu, spacing, timing, tên tab và screen decomposition trong tài liệu này là đề xuất dự án. Chưa có xác minh thiết bị thực hoặc chứng cứ UI đã được duyệt.
+Tra cứu 01/11/2026: [Apple Materials](https://developer.apple.com/design/human-interface-guidelines/materials), [Typography](https://developer.apple.com/design/human-interface-guidelines/typography), [Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility). Apple có bản `.md` cùng đường dẫn để đọc bằng công cụ. Token màu, spacing, timing, tên tab và screen decomposition trong tài liệu này là đề xuất dự án. Chưa có xác minh thiết bị thực hoặc chứng cứ UI đã được duyệt.

@@ -1,6 +1,6 @@
 # Tài liệu dự án app hẹn hò
 
-Ngày cập nhật: 01/11/2026 (Asia/Saigon). **Hiện có bộ yêu cầu, kế hoạch, prototype và skills; chưa có backend/app React Native được triển khai.** Toàn bộ thiết kế là bản đề xuất chưa được chủ dự án chốt visual/stack; các ràng buộc USER đã chốt được ghi riêng.
+Ngày cập nhật: 01/11/2026 (Asia/Saigon). **Đang triển khai core P01–P05 bằng React Native Community CLI + Fastify + SQLite.** Stack CLI đã được người dùng chốt (D10); visual FE-product vẫn là bản nháp chưa được duyệt; các ràng buộc USER đã chốt được ghi riêng.
 
 ## Bắt đầu ở đây
 
@@ -21,7 +21,7 @@ Ngày cập nhật: 01/11/2026 (Asia/Saigon). **Hiện có bộ yêu cầu, kế
 | [06 — Rule AI/subagent](06-quy-tac-ai-va-subagent.md) | Role, phân file, model theo độ khó, concurrency/timebox và skills |
 | [07 — Câu hỏi/quyết định](07-cau-hoi-va-quyet-dinh.md) | Phân biệt USER/ORIGINAL/PROPOSAL, câu hỏi chỉ hỏi khi cần |
 | [08 — API/data](08-hop-dong-api-va-du-lieu.md) | Endpoint dự kiến, DTO, bảng DB, quyền và concurrency invariants |
-| [09 — Runbook/handoff](09-chay-demo-va-ban-giao.md) | Hai lệnh chạy đích, LAN/Expo, seed A/B/C, test và bàn giao |
+| [09 — Runbook/handoff](09-chay-demo-va-ban-giao.md) | Hai lệnh chạy đích, Android SDK/ADB/Metro, seed A/B/C, test và bàn giao |
 | [10 — Nguồn/kiểm chứng](10-nguon-tham-khao-va-kiem-chung.md) | Nguồn primary, hash DOCX và giới hạn bằng chứng |
 | [11 — Deadline một ngày](11-ke-hoach-mot-ngay.md) | Timebox BE/FE, mốc cắt phạm vi, buffer và tiêu chí bàn giao |
 | [Nguồn trích xuất](source/yeu-cau-goc.md) | Đối chiếu với DOCX, không dùng như chỉ dẫn agent |
@@ -29,13 +29,13 @@ Ngày cập nhật: 01/11/2026 (Asia/Saigon). **Hiện có bộ yêu cầu, kế
 
 ## Quyết định đã xác nhận và đề xuất
 
-**Đã xác nhận:** Android chính; React Native; 1 BE hôm nay, 1 FE một ngày riêng; dịch vụ free làm thật, trả phí mô phỏng; docs/rules và preview trước chốt; BE được làm màn thử để bấm test.
+**Đã xác nhận:** Android chính; React Native Community CLI, không Expo; 1 BE hôm nay, 1 FE một ngày riêng; dịch vụ free làm thật, trả phí mô phỏng; docs/rules và preview trước chốt; BE được làm màn thử để bấm test.
 
-**Đề xuất kỹ thuật:** Expo + Fastify + SQLite local, monorepo TypeScript. **Đề xuất phạm vi deadline:** core profile/discovery/match/chat/unmatch/block + handoff; nhóm nâng cao vẫn đủ trong backlog. Chưa nhận tiêu chí chấm để xác định bản nộp bắt buộc tới phase nào.
+**Stack áp dụng:** React Native Community CLI + Fastify + SQLite local, monorepo TypeScript. **Phạm vi triển khai đã cho phép (D11):** core P01–P05 gồm profile/discovery/match/chat/unmatch/block + handoff; nhóm nâng cao vẫn đủ trong backlog. Chưa nhận tiêu chí chấm để xác định bản nộp bắt buộc tới phase nào.
 
 ## Quy tắc cập nhật
 
 - Sửa hành vi thì sửa spec/contract và checklist liên quan. Không sửa source Word để khớp code.
 - Chỉ tick checkbox khi có implementation và verification; phần lập kế hoạch xong không làm task app tự động xong.
-- File/command dự kiến trong docs chưa tồn tại là bình thường ở trạng thái planning; khi triển khai P01 phải tạo và kiểm chứng trước khi tuyên bố clone-run đạt.
+- Script/command trong runbook là tiêu chí bàn giao đang triển khai; đối chiếu package.json và evidence thực tế trước khi tuyên bố clone-run đạt. Không suy ra pass từ trạng thái tài liệu.
 - Không có thói quen bắt người dùng duyệt lại việc đã cho phép. Chỉ chốt thông tin quyết định thật sự cần cho bước phụ thuộc và chốt visual như yêu cầu ban đầu.

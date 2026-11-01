@@ -2,6 +2,8 @@
 
 Ngày BE: **01/11/2026, Asia/Saigon** theo yêu cầu người dùng. Ngày FE chưa được cung cấp; không tự giả định ngày 02/11. H0 là thời điểm bắt đầu implementation, không là cam kết còn đủ 8–10 giờ hôm nay. Đây là ước lượng cần điều chỉnh theo số giờ còn lại và tiêu chí chấm.
 
+D10 khóa React Native Community CLI, không Expo. D11 cho phép core P01–P05 và UI-test BE; FE-product vẫn chờ duyệt visual. Android native toolchain/build là phần đường găng P01, không tính như mở QR.
+
 ## 1. Kết quả cần ưu tiên
 
 **Cam kết đề xuất để chốt:** backend local thật cho profile → discovery → like/match → chat → unmatch/block, seed/persistence, contract và màn React Native tối thiểu để bấm test. Auth có demo session minh bạch; OTP/SMS trả phí mô phỏng. Upload ảnh, GPS và các API thiết bị miễn phí được làm thật trong phạm vi đủ thời gian. Provider miễn phí cần tài khoản/config có nhánh tích hợp thật nhưng không chặn luồng core nếu chủ dự án chưa cung cấp config.
@@ -13,7 +15,7 @@ Toàn bộ 37 chức năng vẫn trong [roadmap 12 phase](04-ke-hoach-trien-khai
 | Khoảng giờ tương đối | Công việc và task | Worker phù hợp | Đầu ra nghiệm thu |
 |---|---|---|---|
 | H0–H0.5 | P00: chốt lát core, stack, DTO/error/session, xem prototype | Integrator; người BE quyết định nghiệp vụ còn chặn | Snapshot contract, không tranh luận visual toàn bộ backlog |
-| H0.5–H1.5 | P01: workspaces, API health, SQLite migrations/seed, config, Expo shell, scripts demo/doctor | BE foundation; worker FE-test độc lập sau contract | API + Expo Android mở được; chạy lại seed không trùng |
+| H0.5–H1.5 | P01: workspaces, API health, SQLite migrations/seed, config, RN Community CLI native shell, scripts demo/doctor | BE foundation; worker FE-test độc lập sau contract | API + Metro + native Android build/install được; chạy lại seed không trùng |
 | H1.5–H3 | P02: demo session, me/profile, ảnh upload/quota; profile UI-test | BE domain + FE-test theo file ownership | A sửa profile, persist; không sửa được profile B; upload ảnh thật |
 | H3–H4.25 | P03: discovery basic, like/pass, unique mutual match, unmatch | BE domain; QA review transaction | Hai client tạo một match; người bị block không xuất hiện |
 | H4.25–H5.75 | P04: text chat REST + socket, retry ID, auth membership, block/report | BE realtime; FE-test dùng contract | A↔B nhận/lấy lại tin; C bị cấm; block/unmatch revoke |
@@ -26,7 +28,7 @@ Các task chi tiết và file dự kiến nằm trong docs 04. Thời gian là n
 
 ## 3. Thứ tự cắt phạm vi khi trễ
 
-1. H1.5 chưa chạy được Expo/API trên Android: dừng mọi tích hợp ngoài; sửa mạng/config trước.
+1. H1.5 chưa chạy được native Android/API và Metro: dừng mọi tích hợp ngoài; sửa mạng/config trước.
 2. H3 chưa có profile/auth hoạt động: ưu tiên demo session, profile text và ảnh; social auth chuyển hàng đợi cấu hình, không giả gọi thật.
 3. H4.25 matching chưa ổn: không xây AI/gói; sửa unique pair, authorization và match lifecycle.
 4. H5.75 socket chưa ổn: REST chat + refresh thủ công có thể là bản dự phòng rõ hạn chế; realtime vẫn là task chưa đạt. Chỉ dùng khi người BE cần cứu demo, không tick socket done.
@@ -63,7 +65,7 @@ Inventory 60 màn/sheet là yêu cầu phủ cho roadmap. Một ngày FE ưu ti�
 - [ ] BE: source, lockfile, migrate/seed, hai lệnh chạy, OpenAPI/DTO/error examples, capabilities.
 - [ ] BE-test: login/profile/discovery/match/chat/block/unmatch bấm được trên React Native Android.
 - [ ] QA: A/B/C quyền, concurrent like, retry send, restart, clone sạch, tắt API/retry.
-- [ ] FE nhận: thiết bị, Expo SDK/Go, API URL, test accounts, known issues, API freeze.
+- [ ] FE nhận: thiết bị, RN/CLI/React theo lockfile, JDK/SDK, cách build/install, ADB reverse 3000/8081, API URL, test accounts, known issues, API freeze.
 - [ ] FE-product: prototype đã được chủ dự án chốt; core screens và state coverage đã kiểm.
 - [ ] Mọi tính năng ngoài core ghi trạng thái riêng: chưa làm/demo/real/blocked-config; không đánh đồng.
 
