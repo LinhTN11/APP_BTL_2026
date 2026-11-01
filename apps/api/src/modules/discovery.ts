@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { Domain, fail, uid, cursorPage, encodeCursor } from "../domain.js";
-import { object, uuid, enumString } from "../schemas.js";
+import { object, uuid, enumString, str } from "../schemas.js";
 import { transaction } from "../db/database.js";
 import { prefs } from "./profiles.js";
 const distance = (a: any, b: any) => {
@@ -42,6 +42,34 @@ export function registerDiscovery(app: FastifyInstance, d: Domain) {
           profile.age > p.maxAge
         )
           return false;
+        const f = p.advancedFilters;
+        const a = profile.advanced;
+        if (f.datingGoal != null && profile.datingGoal !== f.datingGoal)
+          return false;
+        for (const key of [
+          "children",
+          "education",
+          "religion",
+          "hometown",
+        ] as const) {
+          if (
+            f[key] != null &&
+            (a[key] == null ||
+              String(a[key]).normalize("NFKC").trim().toLowerCase() !==
+                String(f[key]).normalize("NFKC").trim().toLowerCase())
+          )
+            return false;
+        }
+        if (
+          f.minHeightCm != null &&
+          (a.heightCm == null || a.heightCm < f.minHeightCm)
+        )
+          return false;
+        if (
+          f.maxHeightCm != null &&
+          (a.heightCm == null || a.heightCm > f.maxHeightCm)
+        )
+          return false;
         const loc = d.one("SELECT * FROM locations WHERE user_id=?", u.id);
         return !ownLoc || !loc || distance(ownLoc, loc) <= p.radiusKm;
       });
@@ -65,14 +93,18 @@ export function registerDiscovery(app: FastifyInstance, d: Domain) {
     "/v1/swipes",
     {
       schema: {
-        body: object({
-          targetUserId: uuid,
-          action: enumString(["like", "pass"]),
-        }),
+        body: object(
+          {
+            targetUserId: uuid,
+            action: enumString(["like", "pass"]),
+            gateAnswer: str(100),
+          },
+          ["targetUserId", "action"]
+        ),
       },
     },
     async (req) => {
-      const { targetUserId, action } = req.body as any;
+      const { targetUserId, action, gateAnswer } = req.body as any;
       d.target(req.actor, targetUserId);
       if (
         d.blocked(req.actor, targetUserId) ||
@@ -84,6 +116,8 @@ export function registerDiscovery(app: FastifyInstance, d: Domain) {
           "PROFILE_UNAVAILABLE",
           "Hồ sơ chưa đầy đủ hoặc không khả dụng"
         );
+      if (action === "like")
+        d.verifyLikeGate(req.actor, targetUserId, gateAnswer);
       return {
         data: transaction(d.db, () => {
           const [low, high] = [req.actor, targetUserId].sort();

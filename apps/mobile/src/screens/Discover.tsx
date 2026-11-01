@@ -98,7 +98,9 @@ export default function Discover({
         'POST',
         { targetUserId: profile.userId, action },
       );
-      setProfiles(value => value.slice(1));
+      setProfiles(value =>
+        value.filter(item => item.userId !== profile.userId),
+      );
       if (result.data.match) {
         onMatch(result.data.match);
       } else {
@@ -193,10 +195,16 @@ export default function Discover({
             />
           </View>
           <SafetyActions
+            key={profile.userId}
             api={api}
+            task={task}
             targetId={profile.userId}
             targetName={profile.displayName}
-            onEnded={() => setProfiles(value => value.slice(1))}
+            onEnded={() =>
+              setProfiles(value =>
+                value.filter(item => item.userId !== profile.userId),
+              )
+            }
           />
         </>
       ) : (

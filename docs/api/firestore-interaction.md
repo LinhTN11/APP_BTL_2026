@@ -1,0 +1,21 @@
+# Firestore interaction core — D12
+
+Owner: BE realtime/domain, P03 T03.01–T03.03 and P04 T04.01–T04.03 (F06–10/F22, private F24 feedback). Implements the approved `docs/execution/firestore-brief.md`; existing mobile DTOs remain canonical.
+
+Implementation sequence: deterministic pair transactions and discovery; message persistence/idempotency and local Socket.IO delivery; block/report/revocation; actual Admin SDK emulator integration verification. No cloud project is created or implicitly selected.
+
+All collections live under `projects/{namespace}`. `matches/{deterministicUuid}` uses a SHA-256 canonical sorted pair transformed into a UUID; `swipes/{actor}_{target}` and `blocks/{actor}_{target}` serialize pair operations. Match `memberIds` contains exactly the canonical pair. Ended pairs never rematch. Swipe validation reads both users/profiles, both block documents, both swipes and match before writes.
+
+`GET /v1/discovery` uses indexed active-user query windows of 50, capped at 200 scanned users per request. Filters remove incomplete/underage/self, any already-swiped or matched pair, either direction block, and apply gender/age/advanced preferences and consented radius. A continuation cursor may accompany an empty page when the scan cap is reached. Profile and media visibility are enforced by the owning profile/media module. Matches and blocks are also bounded chronological cursor queries; the default is 20 and maximum 50. Clients should follow `meta.nextCursor` to enumerate larger sets.
+
+Messages use UUID external IDs and `messageKeys/{sha256(senderId:clientMessageId)}`. Key, match, block and account/session documents are read before writes. A retry with changed content/match returns `MESSAGE_RETRY_CONFLICT`; a retry after revocation is denied. Each new send writes the common match document to serialize with block/unmatch and allocates a strictly increasing ISO timestamp, preserving forward cursors even with a frozen millisecond clock. History uses indexed ascending `(createdAt,id)` queries with `startAfter` and limit 1–50.
+
+Socket.IO belongs to the same Fastify backend. Handshakes and subscriptions authenticate opaque sessions. The server supplies room names and checks membership; expiry/logout disconnect and block/unmatch remove local memberships after commit. REST commits before events; events are never emitted inside a retried transaction. Socket events are transient; reconnect must reload REST history. Cross-instance fanout is not implemented; use one backend process for the demo, while Firestore transactions still protect writes across instances.
+
+Subscriptions also listen to their match document so another backend's end commit removes local rooms. The listener sends public `match:ended` before leaving: it can observe commit before the HTTP post-commit callback does. Duplicate lifecycle events are possible and should be handled idempotently. Only public reason `blocked` or `unmatched` appears in that event. Idle session state is rechecked every second; same-instance logout disconnects immediately. Each socket is limited to 50 match subscriptions. `configureFirestoreSocket(ctx)` returns an asynchronous cleanup function that clears the sweep and awaits an in-flight sweep; disconnect removes per-match listeners.
+
+`POST /v1/matches/:id/read` records a private read cursor after match/session authorization; it does not emit read receipts. Text, local catalog GIF/sticker and voluntary single-point location messages are supported. Arbitrary URL fetching, attachment uploads and background location are unavailable.
+
+Reports are private persisted receipts. Unmatch reasons remain in the private `unmatchFeedback` collection. Block ends the pair in the same transaction; unblock does not restore it. No permanent ban, AI moderation, contact matching, advanced safety review/appeals, chat attachments, games, billing, AI, venues or date planning is ported by this module. SQL modules are never invoked as a fallback.
+
+Verification evidence is recorded in `docs/execution/firestore-interaction-report.md`; emulator evidence is not cloud verification.

@@ -123,6 +123,7 @@ export default function MyProfile({
               key={key}
               label={label}
               value={profile[key] ?? ''}
+              editable={!task.busy}
               multiline={key === 'bio'}
               onChangeText={value => edit({ [key]: value })}
             />
@@ -130,6 +131,7 @@ export default function MyProfile({
           <Field
             label="Sở thích (dấu phẩy)"
             value={profile.interests.join(',')}
+            editable={!task.busy}
             onChangeText={value =>
               edit({ interests: value.split(',').map(item => item.trim()) })
             }
@@ -143,6 +145,7 @@ export default function MyProfile({
                   : `${key}: never/sometimes/often/prefer_not_to_say (tuỳ chọn)`
               }
               value={profile.lifestyle?.[key] ?? ''}
+              editable={!task.busy}
               onChangeText={value =>
                 edit({ lifestyle: { ...profile.lifestyle, [key]: value } })
               }

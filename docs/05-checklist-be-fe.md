@@ -1,6 +1,6 @@
 # Checklist riêng cho backend, UI kiểm thử và frontend sản phẩm
 
-Trạng thái 01/11/2026: core P01–P05 đang triển khai theo D11; React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
+Trạng thái 01/11/2026: D12 (USER) chọn Firestore; core P01–P05 đang port, SQL cũ là reference. Chưa có project/credentials, cloud read/write chưa kiểm chứng; P06–P10 cần port riêng. [Setup cloud](12-ket-noi-firestore.md); React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
 
 **Ngày:** 01/11/2026. **Trạng thái ban đầu:** toàn bộ implementation chưa bắt đầu; tài liệu/prototype không được dùng để đánh dấu backend hoặc màn RN đã hoàn thành.
 
@@ -21,15 +21,15 @@ Một F có thể BE xong nhưng FE chưa xong, hoặc demo xong nhưng provider
 
 **Mã trạng thái khi cập nhật:** `chưa bắt đầu`, `đang làm`, `chờ cấu hình`, `chờ review`, `implemented-demo`, `integrated-device`, `integrated-sandbox`, `integrated-real`, `đã kiểm chứng`. Mỗi phần được tick phải ghi mode và link evidence ở cuối dòng hoặc bảng báo cáo QA.
 
-**Quy tắc dịch vụ:** miễn phí làm thật khi có khả năng/cấu hình; trả phí mô phỏng. First run vẫn chạy được không key. Cần credential miễn phí mà chưa có phải ghi `chờ cấu hình`, không đổi tên fixture thành tích hợp thật. Media picker/camera/GPS/biometric/native calendar có thể làm thật trên Android hỗ trợ mà không cần cloud key.
+**Quy tắc dịch vụ:** miễn phí làm thật khi có khả năng/cấu hình; trả phí mô phỏng. FE chỉ cần API URL; BE setup Firebase project riêng một lần và credential riêng được cấp quyền, không commit key. Cloud thiếu cấu hình phải báo lỗi; emulator phải chọn rõ và không tính là cloud pass. Cần credential miễn phí mà chưa có phải ghi `chờ cấu hình`, không đổi tên fixture thành tích hợp thật. Media picker/camera/GPS/biometric/native calendar có thể làm thật trên Android hỗ trợ mà không cần cloud key.
 
 ## 2. Checklist BE — nền tảng trước chức năng
 
 - [ ] **BE-BASE-01 — T00.01/T00.03:** chốt phạm vi một ngày và contract; đủ F01–F37, error envelope, fixtures A/B/C và quy tắc quyền. Người dùng xác nhận các quyết định nhạy cảm còn mở trước task bị ảnh hưởng.
 - [ ] **BE-BASE-02 — T01.01:** `npm ci → npm run demo` từ clone sạch; `demo` gọi setup/dev, vẫn giữ hai lệnh riêng để debug. Không sửa source/IP hardcode, không mượn env/data máy tác giả.
-- [ ] **BE-BASE-03 — T01.02:** SQLite migration/seed idempotent, FK và unique constraints bảo vệ match/message/media; DB restart giữ dữ liệu.
+- [ ] **BE-BASE-03 — T01.02:** Firestore Admin SDK async/document/index + seed explicit idempotent; transaction/canonical IDs/idempotency docs bảo vệ match/message/media; restart giữ dữ liệu. Lane `test:firestore` emulator và cloud verification ghi riêng.
 - [ ] **BE-BASE-04 — T01.03:** health/config/errors/rate limits/log redaction; `verify`, `doctor`, `smoke:demo` là lệnh hoạt động thật.
-- [ ] **BE-BASE-05 — toàn bộ phase:** schema, migrations, lockfile có một owner tích hợp; không merge đồng thời hai thay đổi xung đột không review.
+- [ ] **BE-BASE-05 — toàn bộ phase:** schema/document/index, lockfile có một owner tích hợp; không merge đồng thời hai thay đổi xung đột không review.
 
 ## 3. Checklist BE — từng chức năng trong nguồn
 
@@ -41,7 +41,7 @@ Một F có thể BE xong nhưng FE chưa xong, hoặc demo xong nhưng provider
 - [ ] **F04 — Bio/mục đích/sở thích — T02.02/P02.** CRUD/read-back, validation/giá trị null và quyền public/private rõ; user C không sửa được A.
 - [ ] **F05 — Lối sống — T02.02/P02.** Taxonomy và enum hợp lệ, sửa một field không mất field khác; field không khai báo không tự suy luận.
 - [ ] **F06 — Bộ lọc cơ bản/GPS — T03.01/P03.** Giới tính/tuổi/bán kính áp dụng ở server, từ chối GPS có lựa chọn khu vực; không trả tọa độ chính xác của người khác và không hiện người đã block.
-- [ ] **F07 — Like/pass/match — T03.02/P03.** Chỉ mutual like tạo match; transaction/unique constraint chặn duplicate qua race/retry; pass/self-like/blocked target có hành vi đúng.
+- [ ] **F07 — Like/pass/match — T03.02/P03.** Chỉ mutual like tạo match; Firestore transaction/canonical pair document chặn duplicate qua race/retry; pass/self-like/blocked target có hành vi đúng.
 - [ ] **F08 — Unmatch — T03.03/P03.** Chỉ thành viên được hủy, retry nhất quán, REST và socket thu hồi quyền; message sau unmatch bị từ chối theo thứ tự commit.
 - [ ] **F09 — Text/GIF/sticker — T04.01/P04.** Persist và phân trang đúng, idempotency cho gửi lại, reconnect nhận bù không trùng; C không đọc/join room. GIF/sticker local là catalog demo nhưng gửi/nhận là API thật.
 - [ ] **F10 — Vị trí trong chat — T04.02/P04.** Chốt lại P015 trước implementation; phương án đề xuất là gửi vị trí của chính người gửi bằng consent. Snapshot/location denied/coordinate validation và quyền xem đều có test.
@@ -170,7 +170,7 @@ Các nhóm này là mục tiêu ưu tiên của một ngày FE, không bảo đ�
 ```text
 ID: F07 / BE / T03.02
 Trạng thái: đã kiểm chứng
-Mode: API + SQLite local thật; không dùng provider bên ngoài
+Mode: phải ghi firestore/cloud hoặc firestore/emulator; kết quả SQLite cũ chỉ là reference local, không chứng minh Firestore
 Người thực hiện / reviewer: tên thành viên hoặc task agent
 Phiên bản: commit hoặc snapshot tương ứng
 Kiểm tra: lệnh và kết quả; kịch bản cạnh tranh hai request

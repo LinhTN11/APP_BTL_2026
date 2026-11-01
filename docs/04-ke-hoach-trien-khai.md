@@ -4,13 +4,13 @@
 
 **Mục tiêu:** hoàn thành demo React Native có backend dùng thật trong demo, có thể chia sẻ mã nguồn và chạy lại từ bản clone sạch; đồng thời giữ lộ trình đầy đủ cho cả 37 chức năng trong tài liệu nguồn.
 
-**Kiến trúc áp dụng:** monorepo npm workspaces, ứng dụng React Native Community CLI, backend Fastify theo module, SQLite file và media lưu cục bộ. Các nhà cung cấp bên ngoài đi qua adapter; dịch vụ miễn phí làm thật khi có cấu hình cần thiết, dịch vụ trả phí mô phỏng minh bạch. Socket.IO phục vụ sự kiện chat, REST là nguồn dữ liệu có thể tải lại.
+**Kiến trúc áp dụng:** monorepo npm workspaces, ứng dụng React Native Community CLI, backend Fastify theo module, Cloud Firestore qua Admin SDK async; media vẫn filesystem BE có auth. Các nhà cung cấp bên ngoài đi qua adapter; dịch vụ miễn phí làm thật khi có cấu hình cần thiết, dịch vụ trả phí mô phỏng minh bạch. Socket.IO phục vụ sự kiện chat, REST là nguồn dữ liệu có thể tải lại.
 
-**Tech stack:** TypeScript, React Native Community CLI, Node.js 24 LTS, Fastify, SQLite qua `node:sqlite`, Socket.IO; phiên bản chính xác được khóa và kiểm tra tương thích tại P01. Không buộc cả nhóm tạo tài khoản cloud để chạy demo.
+**Tech stack:** TypeScript, React Native Community CLI, Node.js 24 LTS, Fastify, Cloud Firestore qua Firebase Admin SDK, Socket.IO; phiên bản chính xác được khóa và kiểm tra tương thích tại P01. D12 yêu cầu BE setup project riêng và credential được cấp quyền; FE chỉ cần API URL, không Admin key. Xem [12](12-ket-noi-firestore.md).
 
 **Spec:** `docs/01-yeu-cau-san-pham.md`; nguồn đối chiếu: `docs/source/yeu-cau-goc.md`.
 
-**Ngày:** 01/11/2026, múi giờ Asia/Saigon. **Trạng thái:** đang triển khai core P01–P05 theo D11; RN Community CLI đã chốt theo D10, visual FE-product chưa được duyệt. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
+**Ngày:** 01/11/2026, múi giờ Asia/Saigon. **Trạng thái:** D12 đang chuyển core P01–P05 sang Firestore; chưa có project/credentials, chưa kiểm chứng đọc/ghi cloud. SQL core/extensions giữ làm reference local; P06–P10 chưa port không được nhận là Firestore hoàn chỉnh; RN Community CLI đã chốt theo D10, visual FE-product chưa được duyệt. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
 
 **Nguồn lực đã được chủ dự án chốt:** Android là nền tảng chính; một người BE cần hoàn thành phần được ưu tiên trong hôm nay 01/11/2026, một người FE có một ngày làm riêng. Dịch vụ miễn phí ưu tiên tích hợp thật; dịch vụ trả phí dùng mô phỏng. [Kế hoạch một ngày](11-ke-hoach-mot-ngay.md) quyết định thứ tự/timebox cho bản demo; roadmap này giữ đầy đủ các phase và không cam kết hoàn thành 37 chức năng trong một ngày.
 
@@ -19,7 +19,7 @@
 - React Native là bắt buộc; prototype HTML/SVG chỉ dùng để duyệt thiết kế.
 - BE là phần việc chính của chủ dự án. FE-test là màn tối thiểu để bấm kiểm tra backend. FE-product là toàn bộ giao diện hoàn chỉnh do nhóm FE phụ trách.
 - Mọi chức năng F01–F37 phải có task và checklist; lùi phase không có nghĩa là bỏ khỏi phạm vi gốc.
-- First run phải chạy được mà không cần API key. Chức năng miễn phí cần credential phải có nhánh tích hợp thật và trạng thái chưa cấu hình rõ; nhánh demo phục vụ first run không được ghi là đã đáp ứng tích hợp thật.
+- First clone FE cần API URL tới BE đã cấu hình. First run BE cần setup cloud một lần; mỗi backend dùng credential riêng, không commit secret. Thiếu cloud config phải fail có hướng dẫn, không tự chuyển SQL/emulator. Emulator là lane test chọn rõ, không bằng chứng cloud.
 - Luồng giả lập phải ghi rõ `demo`, dữ liệu và quyền lợi demo phải tách khỏi chế độ provider thật.
 - Không để client tự xác nhận match, nâng gói, xác minh tài khoản, xóa quyền truy cập chat hoặc ban người dùng.
 - Dữ liệu seed là nhân vật hư cấu 18+. Quy tắc tuổi tối thiểu 18 là đề xuất cần chủ dự án xác nhận; không thu thập thông tin nhạy cảm thật để làm seed.
@@ -30,7 +30,7 @@
 
 ## 2. Cách đọc và tiêu chuẩn xong task
 
-Mỗi task dưới đây ghi đường dẫn **dự kiến tạo**, không khẳng định file đang tồn tại. API trong plan tuân theo [contract chuẩn](08-hop-dong-api-va-du-lieu.md), prefix `/v1`; schema cuối phải thống nhất trong `packages/contracts` trước khi các agent viết hai đầu. Nếu task mở rộng cần endpoint bổ sung, cập nhật 08/OpenAPI trước khi thực hiện, không tự tạo biến thể route/field song song. Các lệnh `npm run ...` là yêu cầu phải tạo tại P01, **chưa phải lệnh đã chạy thành công trong thư mục hiện tại**.
+Mỗi task dưới đây ghi đường dẫn **dự kiến tạo**, không khẳng định file đang tồn tại. D12 yêu cầu mọi task DB dùng Firestore async/document/index; tên module và test lịch sử giữ để truy vết, SQL extensions không được tự đăng ký trong cloud mode. API trong plan tuân theo [contract chuẩn](08-hop-dong-api-va-du-lieu.md), prefix `/v1`; schema cuối phải thống nhất trong `packages/contracts` trước khi các agent viết hai đầu. Nếu task mở rộng cần endpoint bổ sung, cập nhật 08/OpenAPI trước khi thực hiện, không tự tạo biến thể route/field song song. Các lệnh `npm run ...` là yêu cầu phải tạo tại P01, **chưa phải lệnh đã chạy thành công trong thư mục hiện tại**.
 
 Một task chỉ xong khi: hành vi và lỗi đã có contract; implementation đúng ownership; kiểm tra có bằng chứng; docs/checklist cập nhật; người tích hợp xem diff và chạy kiểm tra liên quan. Task có logic phân quyền, cạnh tranh ghi dữ liệu hoặc provider phải được review ở mức tương ứng, không chỉ xem screenshot.
 
@@ -41,7 +41,7 @@ Một task chỉ xong khi: hành vi và lỗi đã có contract; implementation 
 | FE-test | Màn RN phục vụ bấm thử API và hiển thị response | L/M, không tự đổi API |
 | FE-product | Toàn bộ màn hình, trạng thái, Liquid Glass và accessibility | M, H nếu liên quan native/performance |
 | QA | Integration, reconnect, clone sạch, negative cases | M/H theo rủi ro |
-| Integrator | Contract, migrations, lockfile, merge và kiểm tra chéo | M/H; một owner cho file chung |
+| Integrator | Contract, document/index, lockfile, merge và kiểm tra chéo | M/H; một owner cho file chung |
 
 L/M/H mô tả độ khó để chọn agent có chi phí phù hợp, không gắn cứng tên model. Quy tắc ngân sách và giới hạn đồng thời nằm ở [06](06-quy-tac-ai-va-subagent.md).
 
@@ -53,7 +53,8 @@ apps/
     src/app.ts                       # Tạo Fastify instance, không tự listen khi test
     src/server.ts                    # Khởi động server
     src/config.ts                    # Env và chế độ demo/provider
-    src/db/{connection.ts,migrate.ts,seed.ts,migrations/*.sql}
+    src/firestore/{app,context,auth,profiles,media,seed,matching,chat,safety}.ts
+    src/db/                         # SQL reference cũ; không DB chính
     src/modules/{auth,profiles,media,discovery,matches,chat,safety,
                  identity,preferences,personality,music,icebreakers,
                  dates,venues,assistant,explore,billing,calendar}/
@@ -80,7 +81,7 @@ Các module có thể gộp file nhỏ khi hợp lý; không tạo tầng reposi
 | Phase | Kết quả nhìn thấy | Phụ thuộc | Phạm vi chức năng |
 |---|---|---|---|
 | P00 | Docs, quyết định, prototype và API mẫu được duyệt | Thông tin nhóm/tiêu chí chấm | Tất cả F |
-| P01 | Clone sạch → setup → API + Metro + Android native + seed | D10/D11 + contract core | Nền tảng |
+| P01 | Clone → setup cloud BE → API + Metro + Android native; seed gọi rõ | D10/D11/D12 + contract core | Nền tảng; cloud còn pending |
 | P02 | Đăng nhập, hồ sơ, media, trạng thái selfie | P01 | F01–F05 |
 | P03 | Tìm hồ sơ, like/pass, match, unmatch đúng quyền | P02 | F06–F08 |
 | P04 | Chat hai máy + vị trí + chặn/báo cáo tối thiểu | P03 | F09–F10, phần tối thiểu F19/F22/F24 |
@@ -153,30 +154,30 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **File:** `package.json`, `package-lock.json`, `.node-version`, `.env.example`, `.gitignore`, `apps/api/package.json`, `apps/mobile/package.json`, `scripts/{setup,dev,doctor}.mjs`, `README.md`.
 
-**Contract:** đường dẫn chính `npm ci → npm run demo`; `demo` gọi setup/dev, giữ `npm run setup` và `npm run dev` riêng để debug; có `npm run doctor`, `npm run verify`. Setup idempotent, không ghi đè env người dùng, không xóa DB; reset là lệnh riêng có tên rõ ràng.
+**Contract:** đường dẫn chính `npm ci → npm run demo`; `demo` gọi setup/dev, giữ `npm run setup` và `npm run dev` riêng để debug; có `npm run doctor`, `npm run verify`. Setup idempotent, không ghi đè env người dùng, không xóa DB; không có reset cloud ngầm. `firestore:check` read-only, `firestore:seed` explicit, `test:firestore` emulator riêng.
 
 - [ ] Tạo workspaces và khóa RN Community CLI/React/Node/dependencies có tương thích thực tế; không dùng version `latest` trong bản bàn giao.
-- [ ] Viết setup tạo env demo mặc định, thư mục data và migration/seed an toàn; thiếu công cụ phải báo cách cài cụ thể.
-- [ ] Kiểm tra JDK 17, Android SDK/platform-tools, adb; native build/install qua Gradle và reverse cổng 3000/8081 cho USB.
+- [ ] Setup env mẫu, thư mục media; kiểm `FIREBASE_PROJECT_ID` + ADC/credential BE, không tự seed/reset/fallback. `firestore:check` chỉ đọc, `firestore:seed` gọi rõ và idempotent.
+- [ ] Kiểm tra JDK 21, Android SDK/platform-tools, adb; native build/install qua Gradle và reverse cổng 3000/8081 cho USB.
 - [ ] Dev khởi động API và Metro có dừng process con khi thoát; doctor kiểm tra Node, port, writable data, địa chỉ API và kết nối thiết bị.
 - [ ] Chạy bộ lệnh trên thư mục sạch có khoảng trắng; ghi số bước tay còn cần cho JDK/SDK/emulator/USB debugging, native build và firewall LAN.
 
-**Bằng chứng:** `docs/qa/clone-run.md` có log môi trường và thời gian đo thực tế. Không ghi “clone chạy luôn” nếu vẫn cần env bí mật hoặc sửa IP hardcode.
+**Bằng chứng:** `docs/qa/clone-run.md` ghi môi trường/thời gian và setup cloud BE, app FE chỉ cấu hình API URL. Không ghi cloud pass khi chỉ chạy emulator; không có secret trong log/Git/mobile.
 
-### T01.02 — DB, migration và seed
+### T01.02 — Firestore document/index, transaction và seed
 
 **Owner:** BE-Core/Integrator, H. **Phụ thuộc:** T01.01.
 
-**File:** `apps/api/src/db/{connection,migrate,seed}.ts`, `apps/api/src/db/migrations/001_core.sql`, `apps/api/test/db/migrations.test.ts`, `apps/api/test/db/seed.test.ts`.
+**File:** `apps/api/src/firestore/{context,seed}.ts`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, Firestore emulator tests; SQL cũ được giữ reference.
 
-**Contract:** connection bật foreign keys; migration có version và transaction; seed có ID ổn định, chạy lại không nhân bản. Bảng core theo 08: users, sessions, otp_challenges, profiles, profile_media, interests/profile_interests, discovery_preferences, locations, swipes, matches, messages, blocks, reports. Quyền membership suy từ cặp canonical và trạng thái match.
+**Contract:** Admin SDK async, root `projects/{namespace}` với subcollections theo 08; transaction đọc trước ghi, canonical document/idempotency key thay unique SQL. Client rules deny all; API kiểm membership/owner. Index version trong repo; seed stable IDs create-if-absent, không đè sửa/xóa hoặc match ended.
 
-- [ ] Kiểm tra `node:sqlite` trên đúng Node đã khóa; bảo đảm query tham số hóa, timeout và cách xử lý transaction được chứng minh bằng test.
-- [ ] Tạo unique constraints cho cặp match canonical, swipe theo actor/target, message idempotency và FK liên quan.
+- [ ] Kiểm Admin SDK + emulator thật; cloud thiếu `FIREBASE_PROJECT_ID`/credential phải fail trước listen; không fallback SQL/emulator.
+- [ ] Canonical match/swipe IDs, hashed message idempotency docs, composite index cursor; transaction kiểm tham chiếu/quyền/quota/race.
 - [ ] Seed các fixture T00.03, media local hợp lệ, hội thoại lịch sử và trạng thái đủ dùng kiểm thử.
-- [ ] Kiểm tra migrate từ DB rỗng, migrate lần hai, seed lần hai và rollback transaction khi một bước thất bại; lệnh reset chỉ thao tác đường dẫn data của dự án.
+- [ ] Test namespace emulator trống, seed hai lần, transaction rollback/retry, hai instance, restart; không reset cloud hoặc fixture hiện hữu ngầm.
 
-**Kiểm tra dự kiến:** `npm run test:api -- db`. **Chấp nhận:** không nhân đôi user/match/message, FK chặn bản ghi mồ côi, restart giữ dữ liệu; bằng chứng ở `docs/qa/db.md`.
+**Kiểm tra dự kiến:** `npm run test:firestore` (emulator riêng). **Chấp nhận:** không nhân đôi user/match/message, quyền và tham chiếu được transaction bảo vệ, restart giữ dữ liệu. Cloud còn cần `firestore:check` + seed gọi rõ + roundtrip thật theo [12](12-ket-noi-firestore.md); chưa có project/credentials nên pending.
 
 ### T01.03 — API runtime, health và kiểm tra chung
 
@@ -184,7 +185,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **File:** `apps/api/src/{app,server,config}.ts`, `apps/api/src/plugins/{auth,errors,limits}.ts`, `apps/api/test/runtime.test.ts`, `scripts/smoke-demo.mjs`.
 
-**Contract:** `GET /health` chỉ báo health/capability an toàn; config phân biệt demo/provider và nhận API host từ env; log redaction không ghi OTP/token/body chat.
+**Contract:** `GET /health` báo `database:{provider:"firestore",mode:"cloud"|"emulator",projectId,namespace}` an toàn, không credential/token; config phân biệt demo/provider và nhận API host từ env; log redaction không ghi OTP/token/body chat.
 
 - [ ] Tách tạo app khỏi listen để integration test khởi tạo DB tạm độc lập; đóng DB/socket sạch sau test.
 - [ ] Thiết lập validation, request ID, error envelope, request/body/upload limits và CORS theo địa chỉ demo đã cấu hình.
@@ -212,7 +213,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 ### T02.02 — Hồ sơ và media tối đa chín mục (F03–F05)
 
-**Owner:** BE-Feature, M; migration do Integrator. **Phụ thuộc:** T02.01.
+**Owner:** BE-Feature, M; document/index do Integrator. **Phụ thuộc:** T02.01.
 
 **File:** `apps/api/src/modules/profiles/{routes,service}.ts`, `apps/api/src/modules/media/{routes,storage}.ts`, `packages/contracts/src/profiles.ts`, `apps/api/test/profiles/profile.test.ts`, `apps/api/test/media/upload.test.ts`.
 
@@ -266,7 +267,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 **Contract:** `POST /v1/swipes {targetUserId, action: like|pass, gateAnswer?}` → `{swipeId, match?}`; `GET /v1/matches`. Mỗi cặp user canonical chỉ có một match theo chính sách không tự tái match sau ended; trạng thái response đúng 08/OpenAPI.
 
 - [ ] Viết test A like B chưa có match, B like A tạo đúng một match và pass không tạo match.
-- [ ] Viết test gửi lặp request và hai lượt like đồng thời; unique constraint + transaction phải chặn tạo hai match.
+- [ ] Viết test gửi lặp request và hai lượt like đồng thời; canonical pair document + Firestore transaction phải chặn tạo hai match.
 - [ ] Implement server-side eligibility và quyền lợi hiện hành; reject self-like, target blocked/inactive và input không hợp lệ.
 - [ ] Gửi event sau commit; khi event bị bỏ lỡ, REST vẫn trả match đúng và không gửi lại notification trùng.
 
@@ -653,7 +654,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 | Wave | Có thể làm đồng thời | Cần tránh |
 |---|---|---|
 | W0 | Phân tích nghiệp vụ; UI/prototype; kỹ thuật/contract | Nhiều agent tự chọn tên field/gói/quyền khác nhau |
-| W1 | Workspace/API runtime; prototype feedback; fixture/content | Cùng sửa lockfile, app config, migration chung |
+| W1 | Workspace/API runtime; prototype feedback; fixture/content | Cùng sửa lockfile, app config, Firestore index/schema chung |
 | W2 | Auth → profile; FE-test dựng từ contract; QA chuẩn bị request cases | Agent FE tự giả API để báo xong |
 | W3 | Discovery/matching; FE-product core; QA concurrency | Tách matching và transaction vào hai agent không có owner tích hợp |
 | W4 | Chat+safety; FE-test chat; QA hai client/reconnect | Hai agent sửa cùng socket/auth middleware |

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Api, type Match, type Message } from '../api';
-import { newClientMessageId } from '../chat';
-import type { PendingMessage } from '../../App';
+import { newClientMessageId, type PendingMessage } from '../chat';
 import { currentLocation } from '../location';
 import { SafetyActions } from './Safety';
 import {
@@ -265,7 +264,10 @@ export default function Chat({
           label="Tin nhắn (tối đa 2000 ký tự)"
           value={draft}
           multiline
-          onChangeText={setDraft}
+          onChangeText={value => {
+            draftRef.current = value;
+            setDraft(value);
+          }}
         />
         <Button
           label="Gửi tin nhắn"
@@ -274,13 +276,17 @@ export default function Chat({
             task.busy || !!failed || !draft.trim() || draft.length > 2000
           }
           onPress={() =>
-            task.run(() =>
-              send({
+            task.run(async () => {
+              const text = draftRef.current.trim();
+              if (!text || text.length > 2000) {
+                throw new Error('Tin nhắn cần từ 1 đến 2000 ký tự.');
+              }
+              await send({
                 clientMessageId: newClientMessageId(),
                 kind: 'text',
-                text: draft.trim(),
-              }),
-            )
+                text,
+              });
+            })
           }
         />
       </View>

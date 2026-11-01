@@ -22,5 +22,5 @@ if (
   );
 }
 console.log(
-  "Local configuration ready. Existing config/data preserved; API migrates/seeds safely at startup."
+  "Local configuration ready; existing config/data preserved. Cloud Firestore requires project/credentials; seed only through an explicit command."
 );

@@ -170,3 +170,38 @@ test('client retry identifiers have UUID form', () => {
     /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/,
   );
 });
+
+test('ended match drops pending retries and rejects late retry completions', () => {
+  const pending = { clientMessageId: 'retry1', kind: 'text', text: 'private' };
+  let state = chatReducer(freshChatState('A'), {
+    type: 'pending',
+    sessionKey: 'A',
+    matchId: 'pair',
+    value: pending,
+  });
+  expect(state.pending.pair).toEqual(pending);
+  state = chatReducer(state, {
+    type: 'pending',
+    sessionKey: 'A',
+    matchId: 'other',
+    value: pending,
+  });
+  state = chatReducer(state, {
+    type: 'ended',
+    sessionKey: 'A',
+    matchId: 'pair',
+  });
+  expect(state.pending.pair).toBeUndefined();
+  expect(state.pending.other).toEqual(pending);
+  expect(
+    chatReducer(state, {
+      type: 'pending',
+      sessionKey: 'A',
+      matchId: 'pair',
+      value: pending,
+    }),
+  ).toBe(state);
+  expect(
+    chatReducer(state, { type: 'session', sessionKey: 'B' }).pending,
+  ).toEqual({});
+});

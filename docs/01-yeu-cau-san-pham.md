@@ -16,7 +16,7 @@ Nguồn Word được giữ nguyên tại `docs/source/DANH SÁCH CHỨC NĂNG A
 
 ## 2. Mục tiêu và ranh giới
 
-Mục tiêu demo trong ngày BE: hai tài khoản trưởng thành tạo hồ sơ, khám phá nhau, Like tạo Match, trò chuyện, chia sẻ thông tin có đồng ý, và có thể Unmatch/Block/Report. Nhóm có thể chạy cùng bộ dữ liệu mẫu mà không cần tài khoản cloud trả phí. Backend và dữ liệu cục bộ phải thực sự xử lý/lưu; không dùng mock phản hồi cho các nghiệp vụ này. FE hoàn thiện UI trong một ngày riêng; ngày BE chỉ cần UI thử có đủ nút cho hành trình. Toàn bộ 37 chức năng được giữ trong backlog đầy đủ, không cam kết mọi tích hợp ngoài hoàn thành trong ngày.
+Mục tiêu demo trong ngày BE: hai tài khoản trưởng thành tạo hồ sơ, khám phá nhau, Like tạo Match, trò chuyện, chia sẻ thông tin có đồng ý, và có thể Unmatch/Block/Report. D12 chọn Cloud Firestore làm DB chính: nhóm dùng chung backend/API, BE setup Firebase project riêng và quyền truy cập một lần; FE chỉ cần API URL. Project/credentials hiện chưa có, cloud đọc/ghi chưa kiểm chứng. Backend phải thực sự xử lý/lưu bằng Firestore; không dùng mock phản hồi cho các nghiệp vụ này. FE hoàn thiện UI trong một ngày riêng; ngày BE chỉ cần UI thử có đủ nút cho hành trình. Toàn bộ 37 chức năng được giữ trong backlog đầy đủ, không cam kết mọi tích hợp ngoài hoàn thành trong ngày.
 
 `PROPOSAL`: chỉ dành cho người **từ 18 tuổi**; dùng dữ liệu và ảnh mẫu có quyền sử dụng. Phiên bản demo không xác minh danh tính pháp lý, không cam kết cứu hộ, không xử lý tiền thật. Cần chủ dự án duyệt các ranh giới này trước khi phát triển các tích hợp tương ứng; xem [sổ quyết định](07-cau-hoi-va-quyet-dinh.md).
 
@@ -108,7 +108,7 @@ Các con số chưa có trong nguồn dưới đây là `PROPOSAL`. Chủ dự �
 
 **F06 — Bộ lọc cơ bản.** Lọc theo giới tính được khai báo, tuổi và bán kính quanh vị trí được phép sử dụng. Server tính eligibility, không chỉ lọc UI; không trả chính mình, tài khoản ẩn/bị hạn chế, người đã block theo hai chiều. Không có quyền GPS thì dùng khu vực mẫu/chọn khu vực có nhãn rõ, không tự bịa GPS hiện tại. Chỉ trả khoảng cách gần đúng, không trả tọa độ chính xác của hồ sơ trong deck. Khoảng tuổi đảo hoặc bán kính ngoài giới hạn trả lỗi có trường.
 
-**F07 — Like/Pass/Match.** A Like B một lần chỉ tạo một interaction; B Like A tạo đúng một Match bằng giao dịch/unique constraint dù request đồng thời. Match active cho phép hai thành viên chat. Retry dùng request key không tạo tác dụng kép. Pass loại hồ sơ khỏi lượt khám phá hiện tại theo quy tắc vòng đời được chọn; không tự coi Pass là Block vĩnh viễn. Like người đã block/ẩn hoặc không đủ điều kiện bị server từ chối.
+**F07 — Like/Pass/Match.** A Like B một lần chỉ tạo một interaction; B Like A tạo đúng một Match bằng Firestore transaction/canonical pair document dù request đồng thời. Match active cho phép hai thành viên chat. Retry dùng request key không tạo tác dụng kép. Pass loại hồ sơ khỏi lượt khám phá hiện tại theo quy tắc vòng đời được chọn; không tự coi Pass là Block vĩnh viễn. Like người đã block/ẩn hoặc không đủ điều kiện bị server từ chối.
 
 **F08 — Unmatch.** Có xác nhận và lựa chọn lý do riêng tư; Unmatch thành công đóng quyền gửi mới ngay với cả hai. Request gửi tin đến cùng lúc phải kiểm tra lại trạng thái Match trong server. `PROPOSAL`: ẩn hội thoại khỏi danh sách chính; dữ liệu phục vụ báo cáo giữ theo retention đã chốt. Retry Unmatch là idempotent; người ngoài Match không hủy được. Cần quyết định có được Match lại hay không trước khi triển khai Rewind.
 
@@ -188,7 +188,7 @@ Các con số chưa có trong nguồn dưới đây là `PROPOSAL`. Chủ dự �
 
 ### Backend — phạm vi người dùng hiện được giao
 
-- [ ] Contract API, schema, migration, seed và reset dữ liệu demo.
+- [ ] Contract API, schema/document/index Firestore, seed idempotent gọi rõ và lane emulator riêng; không reset cloud ngầm.
 - [ ] Auth/session và các provider adapter demo/live rõ ràng.
 - [ ] Profile/media và bảo vệ dữ liệu riêng tư.
 - [ ] Discovery, filters, Like/Pass/Match/Unmatch và chống race/retry.

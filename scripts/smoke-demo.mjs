@@ -3,15 +3,26 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
-import { createApp } from "../apps/api/src/app.ts";
+import { createFirestoreApp } from "../apps/api/src/firestore/app.ts";
 
 const temporary = await mkdtemp(join(tmpdir(), "gap-http-smoke-"));
 let app;
 try {
-  app = await createApp({
-    dbPath: join(temporary, "smoke.sqlite"),
+  if (
+    process.env.DATABASE_MODE !== "firestore-emulator" ||
+    process.env.FIREBASE_PROJECT_ID !== "demo-app-cuoi-ky" ||
+    process.env.FIRESTORE_EMULATOR_HOST !== "127.0.0.1:8089"
+  )
+    throw new Error(
+      "Smoke writes are restricted to the explicit local Firestore emulator lane."
+    );
+  app = await createFirestoreApp({
+    projectId: "demo-app-cuoi-ky",
+    namespace: `smoke-${randomUUID()}`,
+    emulatorHost: "127.0.0.1:8089",
     dataDir: temporary,
     demoMode: true,
+    seedDemo: true,
     logger: false,
   });
   await app.listen({ port: 0, host: "127.0.0.1" });
@@ -100,10 +111,16 @@ try {
     "blocked match must be inaccessible"
   );
   console.log(
-    "HTTP smoke PASS: health → A/B login → discovery → mutual match → persisted chat → C denied → block revokes access. Temporary DB only."
+    "Firestore EMULATOR HTTP smoke PASS: health → A/B login → discovery → mutual match → persisted chat → C denied → block revokes access. Temporary namespace only; not cloud verification."
   );
 } finally {
-  if (app) await app.close();
+  if (app) {
+    const ctx = app.firestore;
+    assert.equal(ctx.database.mode, "emulator");
+    assert.ok(ctx.database.namespace.startsWith("smoke-"));
+    await ctx.db.recursiveDelete(ctx.root);
+    await app.close();
+  }
   const safe = resolve(temporary);
   assert.ok(
     safe.startsWith(resolve(tmpdir()) + sep) &&

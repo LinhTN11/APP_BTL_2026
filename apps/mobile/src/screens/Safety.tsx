@@ -10,6 +10,7 @@ import {
   Title,
   useTask,
   confirmAction,
+  type Task,
 } from '../ui';
 export function SafetyActions({
   api,
@@ -17,17 +18,20 @@ export function SafetyActions({
   targetName,
   matchId,
   onEnded,
+  task: sharedTask,
 }: {
   api: Api;
   targetId: string;
   targetName: string;
   matchId?: string;
   onEnded: () => void;
+  task?: Task;
 }) {
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState('other');
   const [detail, setDetail] = useState('');
-  const task = useTask();
+  const ownTask = useTask();
+  const task = sharedTask ?? ownTask;
   return (
     <Panel>
       <Label>An toàn · {targetName}</Label>

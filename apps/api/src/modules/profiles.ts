@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { Domain, fail } from "../domain.js";
 import { object, profilePatch, preferencesPatch, coords } from "../schemas.js";
+import { transaction } from "../db/database.js";
 export function registerProfiles(app: FastifyInstance, d: Domain) {
   app.get("/v1/me/profile", async (req) => ({
     data: d.profile(req.actor, true),
@@ -26,6 +27,11 @@ export function registerProfiles(app: FastifyInstance, d: Domain) {
       }
       if (body.displayName !== undefined && !body.displayName.trim())
         fail(400, "VALIDATION_ERROR", "Tên không được trống");
+      if (body.advanced) {
+        for (const item of Object.values(body.advanced))
+          if (typeof item === "string" && !item.trim())
+            fail(400, "VALIDATION_ERROR", "Trường mở rộng không được trống");
+      }
       const fields: Record<string, string> = {
         displayName: "display_name",
         dateOfBirth: "date_of_birth",
@@ -35,14 +41,29 @@ export function registerProfiles(app: FastifyInstance, d: Domain) {
         interests: "interests_json",
         lifestyle: "lifestyle_json",
       };
-      for (const [key, value] of Object.entries(body))
-        d.run(
-          `UPDATE profiles SET ${fields[key]}=? WHERE user_id=?`,
-          key === "interests" || key === "lifestyle"
-            ? JSON.stringify(value)
-            : (value as string),
-          req.actor
-        );
+      transaction(d.db, () => {
+        for (const [key, value] of Object.entries(body))
+          if (key === "advanced") {
+            const advanced = {
+              ...JSON.parse(
+                d.personalization(req.actor)?.advanced_json ?? "{}"
+              ),
+              ...(value as object),
+            };
+            d.run(
+              "INSERT INTO personalizations(user_id,advanced_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET advanced_json=excluded.advanced_json",
+              req.actor,
+              JSON.stringify(advanced)
+            );
+          } else
+            d.run(
+              `UPDATE profiles SET ${fields[key]}=? WHERE user_id=?`,
+              key === "interests" || key === "lifestyle"
+                ? JSON.stringify(value)
+                : (value as string),
+              req.actor
+            );
+      });
       return { data: d.profile(req.actor, true) };
     }
   );
@@ -60,6 +81,27 @@ export function registerProfiles(app: FastifyInstance, d: Domain) {
       const p = { ...prefs(d, req.actor), ...(req.body as any) };
       if (p.minAge > p.maxAge)
         fail(422, "AGE_RANGE_INVALID", "minAge không được lớn hơn maxAge");
+      if ((req.body as any).advancedFilters !== undefined) {
+        p.advancedFilters = {
+          ...prefs(d, req.actor).advancedFilters,
+          ...(req.body as any).advancedFilters,
+        };
+        const f = p.advancedFilters;
+        if (
+          f.minHeightCm != null &&
+          f.maxHeightCm != null &&
+          f.minHeightCm > f.maxHeightCm
+        )
+          fail(422, "HEIGHT_RANGE_INVALID", "Khoảng chiều cao không hợp lệ");
+        for (const item of Object.values(f))
+          if (typeof item === "string" && !item.trim())
+            fail(400, "VALIDATION_ERROR", "Bộ lọc không được trống");
+        d.run(
+          "INSERT INTO personalizations(user_id,filters_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET filters_json=excluded.filters_json",
+          req.actor,
+          JSON.stringify(f)
+        );
+      }
       d.run(
         "UPDATE discovery_preferences SET genders_json=?,min_age=?,max_age=?,radius_km=? WHERE user_id=?",
         JSON.stringify(p.genders),
@@ -105,5 +147,6 @@ export function prefs(d: Domain, id: string) {
     minAge: r.min_age,
     maxAge: r.max_age,
     radiusKm: r.radius_km,
+    advancedFilters: JSON.parse(d.personalization(id)?.filters_json ?? "{}"),
   };
 }

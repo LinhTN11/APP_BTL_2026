@@ -1,0 +1,11 @@
+# D12 Firestore docs migration report
+
+Date: 01/11/2026 (Asia/Saigon). Owner: Docs/data; scope T01.01–T01.03/T05.02–T05.03 and database contract for F01–F10/basic F22. Documentation only; no source/dependency changes, commits or subagents.
+
+Updated AGENTS.md, docs/README.md and root docs 01/03–11. Docs02 UI inventory inspected and preserved. D12 recorded as USER: Cloud Firestore primary via async Firebase Admin SDK; no Firebase project/credential yet, true cloud reads/writes pending. Existing SQL core/extensions remain historical local reference, P06–P10 require separate ports and verification. RN Community CLI/no Expo/Android and unapproved visual status unchanged.
+
+Docs03/04/08 now specify projects/{namespace} subcollections, canonical IDs/idempotency documents, async transactions, bounded cursor queries/composite indexes and API authorization; client Firestore rules deny all. Backend credential stays ADC/GOOGLE_APPLICATION_CREDENTIALS server-only, FIREBASE_PROJECT_ID required, no silent SQLite/emulator fallback. Media stays protected backend filesystem, not Cloud Storage.
+
+Runbook09 separates one-time backend cloud setup/authorized per-backend credentials from FE API-URL-only setup. firestore:check read-only; firestore:seed explicit/create-if-absent; test:firestore emulator lane; demo cloud fails helpfully on missing config. Health exposes safe database provider/mode/project ID/namespace. Commands remain subject to implementation/evidence, not claimed passing from docs. JDK21 and RN0.88/CLI20.2 reflect supplied verified environment; exact pins remain lockfile-owned. Docs10 historical SQLite/prototype checks explicitly do not prove current cloud operation.
+
+Verification: Python read-only documentation scan completed exit0. Retained 37 unique F IDs, 60 unique S IDs, 12 phase headings, 35 unique task IDs. All internal Markdown file links in owned root documents resolve (0 broken). No checked completion boxes in those files; no active JDK17 text. Final contradiction scan kept SQL references only as history/comparison/reference or explanations of absent SQL constraints. No source tests/builds or cloud reads/writes were executed by this worker; cloud evidence still pending project/credentials.

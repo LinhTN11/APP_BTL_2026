@@ -1,6 +1,6 @@
 # Nguồn tham khảo và giới hạn kiểm chứng
 
-Ngày tra cứu: 01/11/2026. **Ghi chú sau D10:** các nguồn Expo/skills Expo bên dưới là lịch sử phương án cũ, đã ngừng áp dụng. Không dùng làm chỉ dẫn stack/build/native module hiện tại; RN Community CLI là bắt buộc. Các quyết định stack/UI là diễn giải áp dụng cho dự án; không phải Apple/Expo bảo chứng app.
+Ngày tra cứu: 01/11/2026. **D12:** Cloud Firestore đã được chọn, nhưng chưa có project/credentials nên chưa kiểm chứng cloud. Các runtime SQLite/prototype/build/test snapshot bên dưới thuộc lượt trước; không suy ra cloud pass. Trạng thái mới xem [12](12-ket-noi-firestore.md) và `docs/qa/verification.md`. **Ghi chú sau D10:** các nguồn Expo/skills Expo bên dưới là lịch sử phương án cũ, đã ngừng áp dụng. Không dùng làm chỉ dẫn stack/build/native module hiện tại; RN Community CLI là bắt buộc. Các quyết định stack/UI là diễn giải áp dụng cho dự án; không phải Apple/Expo bảo chứng app.
 
 ## Nguồn yêu cầu
 
@@ -21,6 +21,8 @@ Ngày tra cứu: 01/11/2026. **Ghi chú sau D10:** các nguồn Expo/skills Expo
 | [Expo LocalAuthentication](https://docs.expo.dev/versions/latest/sdk/local-authentication/) | Biometrics OS, Face ID không test được trong Expo Go iOS | Không thay auth server/session |
 | [Expo start developing](https://docs.expo.dev/get-started/start-developing/) | Metro/QR/LAN và tunnel | Mạng API riêng phải cấu hình, tunnel Metro không bao gồm backend |
 | [Fastify Getting Started](https://fastify.dev/docs/latest/Guides/Getting-Started/) | Route/plugin/validation nền tảng | Chưa scaffold hoặc kiểm integration của app |
+| [Firebase Admin setup](https://firebase.google.com/docs/admin/setup) | Credential server qua ADC/service-account, Firestore Admin SDK | Cloud project/credential chưa có, không phải bằng chứng kết nối |
+| [Firestore transactions](https://firebase.google.com/docs/firestore/manage-data/transactions) | Async transaction/retry và document invariants | Cần emulator test và cloud roundtrip riêng |
 | [Node SQLite](https://nodejs.org/api/sqlite.html) | Embedded SQLite API | Latest docs có thể khác Node24; chỉ dùng API runtime đã thử |
 | [PocketBase introduction](https://pocketbase.io/docs/) | Backend đóng gói auth/realtime/SQLite, phương án so sánh | Không được chọn song song Fastify |
 | [Supabase local development](https://supabase.com/docs/guides/local-development) | Local stack Windows cần CLI/container runtime | Không phù hợp default ít cài đặt nếu nhóm chưa có |
@@ -28,7 +30,7 @@ Ngày tra cứu: 01/11/2026. **Ghi chú sau D10:** các nguồn Expo/skills Expo
 
 Các nguồn Apple bổ sung được dùng chi tiết tại cuối docs UI; mở nguồn chính khi thay version/implementation.
 
-## Kiểm tra thực tế trong lượt chuẩn bị
+## Kiểm tra lịch sử trong lượt chuẩn bị — không phải bằng chứng cloud hiện tại
 
 - Thư mục ban đầu không có source app hoặc Git repository. Không có commit/push/deploy trong lượt này.
 - Đọc DOCX bằng ZIP/XML, đối chiếu 37 dòng chức năng, lưu bản nguồn và hash.

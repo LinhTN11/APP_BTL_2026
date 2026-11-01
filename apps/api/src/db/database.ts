@@ -24,6 +24,7 @@ export function setupDatabase({
   demoMode?: boolean;
 }) {
   mkdirSync(dataDir, { recursive: true });
+  mkdirSync(join(dataDir, "media"), { recursive: true });
   if (dbPath !== ":memory:") mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;

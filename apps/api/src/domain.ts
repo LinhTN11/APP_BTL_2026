@@ -1,4 +1,9 @@
-import { randomBytes, createHash, randomUUID } from "node:crypto";
+import {
+  randomBytes,
+  createHash,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { Server } from "socket.io";
 
@@ -99,6 +104,50 @@ export class Domain {
     if (now.toISOString().slice(5, 10) < dob.slice(5)) years--;
     return years;
   }
+  personalization(id: string) {
+    // Core seed and older databases remain readable before the extension registers.
+    if (
+      !this.one(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='personalizations'"
+      )
+    )
+      return null;
+    return (
+      this.one("SELECT * FROM personalizations WHERE user_id=?", id) ?? null
+    );
+  }
+  verifyLikeGate(actor: string, target: string, answer?: string) {
+    const p = this.personalization(target);
+    if (!p?.gate_question) return;
+    const now = this.config.now();
+    const attempt = this.one(
+      "SELECT * FROM like_gate_attempts WHERE actor_id=? AND target_id=?",
+      actor,
+      target
+    );
+    const active = attempt && attempt.window_start > now - 900_000;
+    if (active && attempt.attempts >= 5)
+      fail(429, "GATE_RATE_LIMIT", "Vui lòng thử lại sau 15 phút");
+    const actual = hash(`${p.gate_salt}:${normalizeAnswer(answer ?? "")}`);
+    if (
+      !answer ||
+      !timingSafeEqual(Buffer.from(actual), Buffer.from(p.gate_answer_hash))
+    ) {
+      this.run(
+        "INSERT INTO like_gate_attempts(actor_id,target_id,window_start,attempts) VALUES(?,?,?,1) ON CONFLICT(actor_id,target_id) DO UPDATE SET window_start=excluded.window_start,attempts=?",
+        actor,
+        target,
+        active ? attempt.window_start : now,
+        active ? attempt.attempts + 1 : 1
+      );
+      fail(422, "GATE_ANSWER_INVALID", "Câu trả lời chưa đúng");
+    }
+    this.run(
+      "DELETE FROM like_gate_attempts WHERE actor_id=? AND target_id=?",
+      actor,
+      target
+    );
+  }
   profile(id: string, own = false) {
     const p = this.one("SELECT * FROM profiles WHERE user_id=?", id);
     if (!p) return fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
@@ -106,6 +155,10 @@ export class Domain {
       "SELECT status,mode FROM verification_requests WHERE user_id=? ORDER BY submitted_at DESC,id DESC LIMIT 1",
       id
     );
+    const extra = this.personalization(id);
+    const result = extra?.personality_json
+      ? JSON.parse(extra.personality_json)
+      : null;
     return {
       userId: id,
       displayName: p.display_name,
@@ -116,6 +169,29 @@ export class Domain {
       datingGoal: p.dating_goal,
       interests: JSON.parse(p.interests_json),
       lifestyle: JSON.parse(p.lifestyle_json),
+      advanced: {
+        children: null,
+        heightCm: null,
+        education: null,
+        religion: null,
+        hometown: null,
+        ...JSON.parse(extra?.advanced_json ?? "{}"),
+      },
+      personality:
+        result && (result.visible || own)
+          ? {
+              code: result.code,
+              version: result.version,
+              ...(own ? { visible: result.visible } : {}),
+            }
+          : null,
+      mood:
+        extra?.mood_expires_at > this.config.now()
+          ? {
+              text: extra.mood_text,
+              expiresAt: new Date(extra.mood_expires_at).toISOString(),
+            }
+          : null,
       media: this.all(
         "SELECT id,kind,position FROM profile_media WHERE user_id=? ORDER BY position",
         id
@@ -165,10 +241,21 @@ export class Domain {
       this.date(),
       id
     );
+    if (
+      this.one(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='games'"
+      )
+    )
+      this.run(
+        "UPDATE games SET status='ended',version=version+1 WHERE match_id=? AND status<>'ended'",
+        id
+      );
     this.io.to(`match:${id}`).emit("match:ended", { matchId: id, reason });
     this.io.in(`match:${id}`).socketsLeave(`match:${id}`);
   }
 }
+export const normalizeAnswer = (value: string) =>
+  value.normalize("NFKC").trim().toLocaleLowerCase("vi");
 export function cursorPage(query: any) {
   const limit = query.limit === undefined ? 20 : Number(query.limit);
   if (!Number.isInteger(limit) || limit < 1 || limit > 50)

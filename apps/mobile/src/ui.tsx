@@ -144,12 +144,14 @@ export function Field({
   onChangeText,
   multiline = false,
   numeric = false,
+  editable = true,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   multiline?: boolean;
   numeric?: boolean;
+  editable?: boolean;
 }) {
   const p = React.useContext(Palette);
   return (
@@ -158,6 +160,8 @@ export function Field({
       <TextInput
         accessibilityLabel={label}
         value={value}
+        editable={editable}
+        accessibilityState={{ disabled: !editable }}
         onChangeText={onChangeText}
         multiline={multiline}
         keyboardType={numeric ? 'numeric' : 'default'}

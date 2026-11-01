@@ -1,8 +1,10 @@
-# Core API 0.1.0
+# Core API 0.2.0
 
-Owner: BE-Core. Scope T00.03, T01.02–T01.03, T02.01–T04.03; supports F01–F10 and minimal block/report F22/F24. Fastify 5, SQLite and Socket.IO are real local services. No cloud account or provider secret is needed.
+Owner: BE-Core. Scope P01–P05; supports core F01–F10 and basic block/report F22/F24. The active backend is Fastify 5 + Firebase Admin SDK + Cloud Firestore + Socket.IO. **Cloud mode requires an explicitly configured Firebase project and backend credentials.** No cloud project/credentials have been supplied, so cloud read/write is not yet verified.
 
-`openapi.yaml` is OpenAPI 3.1 serialized as JSON (valid YAML). Shared types: `packages/contracts/src/index.ts`. Regenerate using `node --import tsx apps/api/scripts/generate-openapi.ts` from the repository root. All successful JSON endpoints return HTTP 200, including creation and retry.
+The former SQLite implementation is historical local reference, not the active factory or production persistence mode. Preserve its evidence in [the original backend report](../execution/backend-report.md); do not start it via the current handoff. P06–P10 SQL modules remain reference only and are not ported or feature-complete in Firestore. Current Firestore behavior is documented in [core Firestore API](firestore-core.md) and [interaction API](firestore-interaction.md).
+
+`openapi.yaml` is OpenAPI 3.1 serialized as JSON (valid YAML); it describes the shared HTTP wire contract, while the specialized Firestore documents describe persistence and mode behavior. Shared types: `packages/contracts/src/index.ts`. The root integrator is updating the health schema for the current safe Firestore mode/project/namespace fields; use `/health` from the running implementation as the current source until that schema update lands. All successful JSON endpoints return HTTP 200, including creation and retry.
 
 Use `Authorization: Bearer <token>` except health, capabilities, demo accounts/sessions and OTP request/verify. Sessions last 24 hours by default; only hashes are stored. Logout revokes that token and disconnects its sockets. Demo login accepts only A/B/C/D. `DEMO_MODE=false` disables demo login; OTP returns 503 without substituting fake SMS success.
 
@@ -18,14 +20,19 @@ Selfie upload creates a private `pending` request with `mode:'demo'`; it never g
 
 Errors use `{error:{code,message,requestId,fieldErrors?}}`. Rate limits return 429 with `Retry-After`: IP 300 requests/minute, OTP five requests per phone per 15 minutes, five attempts per challenge and five-minute TTL. Wrong/expired/consumed OTPs fail. Demo OTP does not prove phone ownership.
 
-Factory:
+Active factory:
 
 ```ts
-const app = await createApp({dbPath, dataDir, demoMode: true});
-// Optional sessionTtlMs, otpTtlMs, now: () => epochMs, logger
-// app.db: DatabaseSync; app.io: Socket.IO Server; app.config
+const app = await createFirestoreApp({
+  projectId, namespace, dataDir, demoMode: true,
+});
+// Optional emulatorHost, seedDemo, sessionTtlMs, otpTtlMs,
+// now: () => epochMs, logger
+// app.firestore: FirestoreContext; app.firestore.io: Socket.IO Server
 await app.listen({host:'127.0.0.1', port:0});
 await app.close();
 ```
 
-`setupDatabase({dbPath,dataDir,demoMode?})` and `seedDemo(db,dataDir)` are exported from `apps/api/src/app.ts`. Migration/seed run automatically. Seed never overwrites edited profiles, restores deleted media rows, resets swipes or erases messages. Standalone default data directory is `<cwd>/data`; root launcher supplies absolute root `DATA_DIR`. Server binds `0.0.0.0:3000` (`PORT` override). Root runbook handles Android/LAN setup.
+`createFirestoreApp` is exported from `apps/api/src/firestore/app.ts`. The context and its domain services are under `apps/api/src/firestore/`; transactions enforce session, ownership, match and block rules. Data lives below `projects/{namespace}` and uses bounded queries/indexes. Cloud mode requires `DATABASE_MODE=firestore`, `FIREBASE_PROJECT_ID`, and ADC or `GOOGLE_APPLICATION_CREDENTIALS` on the backend. Missing configuration fails with guidance; it does not fall back to SQL or emulator. Emulator is a separate explicit `DATABASE_MODE=firestore-emulator` test lane. See [Firestore setup](../12-ket-noi-firestore.md) and [BE→FE handoff](../handoff/be-to-fe.md).
+
+The explicit `firestore:seed` command creates fictional fixtures only when absent; it does not reset edited/deleted content or ended matches. Media bytes remain on the protected backend filesystem; Firestore stores metadata only. Client Firestore rules must deny all direct client access. Admin credentials never belong in the mobile app, Git, or handoff.

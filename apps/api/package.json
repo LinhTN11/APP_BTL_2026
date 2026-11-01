@@ -7,12 +7,14 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:firestore": "node --import tsx --test test/firestore-*.test.ts"
   },
   "dependencies": {
-    "fastify": "5.12.7",
     "@fastify/cors": "11.3.1",
     "@fastify/multipart": "10.1.6",
+    "fastify": "5.12.7",
+    "firebase-admin": "14.5.0",
     "socket.io": "4.8.4"
   },
   "devDependencies": {

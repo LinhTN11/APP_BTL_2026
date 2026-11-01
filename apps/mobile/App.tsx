@@ -171,7 +171,7 @@ export default function App() {
           <StatusBar barStyle={p === dark ? 'light-content' : 'dark-content'} />
           <KeyboardAvoidingView
             style={s.root}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             {restoring ? (
               <View style={s.content}>
@@ -199,13 +199,6 @@ export default function App() {
   );
 }
 type Screen = 'discover' | 'matches' | 'profile' | 'safety';
-export interface PendingMessage {
-  clientMessageId: string;
-  kind: string;
-  text?: string;
-  payload?: Record<string, unknown>;
-}
-
 function Workspace({
   saved,
   expire,
@@ -226,9 +219,6 @@ function Workspace({
   const [socketState, setSocketState] = useState('Đang kết nối…');
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
   const profileDirty = useRef(false);
-  const [pending, setPending] = useState<Record<string, PendingMessage | null>>(
-    {},
-  );
   const [version, setVersion] = useState(0);
   const [chat, dispatch] = useReducer(chatReducer, userId, freshChatState);
   const task = useTask();
@@ -445,9 +435,14 @@ function Workspace({
           userId={userId}
           messages={chat.messages[active.id] ?? []}
           draft={chat.drafts[active.id] ?? ''}
-          failed={pending[active.id] ?? null}
+          failed={chat.pending[active.id] ?? null}
           setFailed={value =>
-            setPending(previous => ({ ...previous, [active.id]: value }))
+            dispatch({
+              type: 'pending',
+              sessionKey: userId,
+              matchId: active.id,
+              value,
+            })
           }
           setDraft={text =>
             dispatch({

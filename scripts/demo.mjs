@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { createServer } from "node:net";
 import { join } from "node:path";
 import {
   root,
@@ -8,6 +7,8 @@ import {
   stopProcess,
   devices,
   lanAddresses,
+  firestoreConfiguration,
+  isPortAvailable,
 } from "./common.mjs";
 
 const setup = spawnSync(
@@ -17,12 +18,18 @@ const setup = spawnSync(
 );
 if (setup.status !== 0) process.exit(setup.status || 1);
 const env = environment();
+try {
+  firestoreConfiguration(env);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
 for (const port of [Number(env.PORT), 8081]) {
-  const free = await new Promise((resolve) => {
-    const s = createServer();
-    s.once("error", () => resolve(false));
-    s.listen(port, "127.0.0.1", () => s.close(() => resolve(true)));
-  });
+  const host =
+    port === Number(env.PORT) && env.HOST !== "0.0.0.0"
+      ? env.HOST
+      : "127.0.0.1";
+  const free = await isPortAvailable(port, host);
   if (!free) {
     console.error(
       `Port ${port} is in use. Stop that server before starting this demo.`
@@ -40,6 +47,9 @@ console.log(
 );
 console.log(
   "DEMO auth/providers are labeled. No SMS/payment sent. Ctrl+C stops this demo process tree."
+);
+console.log(
+  `DB provider: Firestore; mode: ${env.DATABASE_MODE}; project: ${env.FIREBASE_PROJECT_ID}; namespace: ${env.FIRESTORE_NAMESPACE}`
 );
 const children = [];
 let stopping = false;

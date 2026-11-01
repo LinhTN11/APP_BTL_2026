@@ -11,6 +11,8 @@ import { registerProfiles } from "./modules/profiles.js";
 import { registerMedia } from "./modules/media.js";
 import { registerDiscovery } from "./modules/discovery.js";
 import { registerChat } from "./modules/chat.js";
+import { registerPersonalization } from "./modules/personalization/index.js";
+import { registerDates } from "./modules/dates/index.js";
 declare module "fastify" {
   interface FastifyRequest {
     actor: string;
@@ -167,6 +169,8 @@ export async function createApp(options: AppOptions = {}) {
       { name: "ai", mode: "unavailable", reason: "Ngoài phạm vi core" },
     ],
   }));
+  registerPersonalization(app, d);
+  registerDates(app, d);
   registerAuth(app, d);
   registerProfiles(app, d);
   registerMedia(app, d);

@@ -13,6 +13,40 @@ export const enumString = (values: string[]) => ({
   enum: values,
 });
 export const genders = ["female", "male", "other"];
+export const childrenValues = [
+  "none",
+  "have",
+  "want",
+  "unsure",
+  "prefer_not_to_say",
+];
+const nullable = (schema: Record<string, any>) => ({
+  anyOf: [schema, { type: "null" }],
+});
+export const advancedProfile = object(
+  {
+    children: nullable(enumString(childrenValues)),
+    heightCm: nullable({ type: "integer", minimum: 100, maximum: 250 }),
+    education: nullable(str(80)),
+    religion: nullable(str(80)),
+    hometown: nullable(str(100)),
+  },
+  []
+);
+export const advancedFilters = object(
+  {
+    children: nullable(enumString(childrenValues)),
+    minHeightCm: nullable({ type: "integer", minimum: 100, maximum: 250 }),
+    maxHeightCm: nullable({ type: "integer", minimum: 100, maximum: 250 }),
+    education: nullable(str(80)),
+    religion: nullable(str(80)),
+    hometown: nullable(str(100)),
+    datingGoal: nullable(
+      enumString(["relationship", "friendship", "casual", "unsure"])
+    ),
+  },
+  []
+);
 export const profilePatch = object(
   {
     displayName: str(80),
@@ -26,6 +60,7 @@ export const profilePatch = object(
       uniqueItems: true,
       items: str(40),
     },
+    advanced: advancedProfile,
     lifestyle: object(
       {
         zodiac: str(30),
@@ -59,6 +94,7 @@ export const preferencesPatch = object(
     minAge: { type: "integer", minimum: 18, maximum: 100 },
     maxAge: { type: "integer", minimum: 18, maximum: 100 },
     radiusKm: { type: "number", minimum: 1, maximum: 1000 },
+    advancedFilters,
   },
   []
 );

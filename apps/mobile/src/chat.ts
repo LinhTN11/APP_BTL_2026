@@ -1,4 +1,10 @@
 import type { Message } from './api';
+export interface PendingMessage {
+  clientMessageId: string;
+  kind: string;
+  text?: string;
+  payload?: Record<string, unknown>;
+}
 export function upsertMessages(
   existing: Message[],
   incoming: Message[],
@@ -16,10 +22,11 @@ export interface ChatState {
   sessionKey: string;
   messages: Record<string, Message[]>;
   drafts: Record<string, string>;
+  pending: Record<string, PendingMessage | null>;
   endedIds: string[];
 }
 export function freshChatState(sessionKey: string): ChatState {
-  return { sessionKey, messages: {}, drafts: {}, endedIds: [] };
+  return { sessionKey, messages: {}, drafts: {}, pending: {}, endedIds: [] };
 }
 export type ChatAction =
   | { type: 'session'; sessionKey: string }
@@ -30,6 +37,12 @@ export type ChatAction =
       messages: Message[];
     }
   | { type: 'draft'; sessionKey: string; matchId: string; text: string }
+  | {
+      type: 'pending';
+      sessionKey: string;
+      matchId: string;
+      value: PendingMessage | null;
+    }
   | { type: 'ended'; sessionKey: string; matchId: string };
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (action.type === 'session') {
@@ -59,14 +72,23 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       drafts: { ...state.drafts, [action.matchId]: action.text },
     };
   }
+  if (action.type === 'pending') {
+    return {
+      ...state,
+      pending: { ...state.pending, [action.matchId]: action.value },
+    };
+  }
   const messages = { ...state.messages };
   const drafts = { ...state.drafts };
+  const pending = { ...state.pending };
   delete messages[action.matchId];
   delete drafts[action.matchId];
+  delete pending[action.matchId];
   return {
     ...state,
     messages,
     drafts,
+    pending,
     endedIds: [...new Set([...state.endedIds, action.matchId])],
   };
 }

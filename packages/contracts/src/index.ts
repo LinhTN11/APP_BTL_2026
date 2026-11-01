@@ -15,6 +15,30 @@ export interface Capability {
   name: string;
   mode: ProviderMode;
   reason?: string;
+  provider?: "firestore";
+  databaseMode?: "cloud" | "emulator";
+  projectId?: string;
+  namespace?: string;
+  storage?: string;
+  notice?: string;
+}
+export interface DatabaseStatus {
+  provider: "firestore";
+  mode: "cloud" | "emulator";
+  projectId: string;
+  namespace: string;
+}
+export interface AdvancedProfile {
+  children?: "none" | "have" | "want" | "unsure" | "prefer_not_to_say" | null;
+  heightCm?: number | null;
+  education?: string | null;
+  religion?: string | null;
+  hometown?: string | null;
+}
+export interface AdvancedFilters extends Omit<AdvancedProfile, "heightCm"> {
+  datingGoal?: DatingGoal | null;
+  minHeightCm?: number | null;
+  maxHeightCm?: number | null;
 }
 export interface User {
   id: string;
@@ -43,6 +67,9 @@ export interface Profile {
   lifestyle: Lifestyle;
   media: Media[];
   verification?: { status: string; mode: ProviderMode };
+  advanced?: AdvancedProfile;
+  personality?: null;
+  mood?: null;
 }
 export type PublicProfile = Omit<Profile, "dateOfBirth">;
 export interface Preferences {
@@ -50,6 +77,7 @@ export interface Preferences {
   minAge: number;
   maxAge: number;
   radiusKm: number;
+  advancedFilters?: AdvancedFilters;
 }
 export interface Match {
   id: string;
@@ -109,6 +137,7 @@ export type ProfilePatch = Partial<
     | "datingGoal"
     | "interests"
     | "lifestyle"
+    | "advanced"
   >
 >;
 export type PreferencesPatch = Partial<Preferences>;

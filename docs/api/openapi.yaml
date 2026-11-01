@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Gặp local core API",
-    "version": "0.1.0",
-    "description": "P00/P01–P05 local demo. All creation and idempotent retry responses use HTTP 200. Opaque bearer sessions; no real SMS or identity verification."
+    "title": "Gặp Firestore core API",
+    "version": "0.2.0",
+    "description": "Primary backend uses Firebase Admin SDK / Cloud Firestore. Cloud connection awaits project credentials. Explicit emulator lane is separately labeled. HTTP200 creation/retry responses. SQLite and advanced SQL modules are reference only."
   },
   "servers": [
     {
@@ -38,7 +38,7 @@
                           "const": "ok"
                         },
                         "database": {
-                          "const": "ready"
+                          "$ref": "#/components/schemas/Database"
                         },
                         "version": {
                           "type": "string",
@@ -187,6 +187,28 @@
                             ]
                           },
                           "reason": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "databaseMode": {
+                            "type": "string",
+                            "enum": [
+                              "cloud",
+                              "emulator"
+                            ]
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": "string"
+                          },
+                          "storage": {
+                            "type": "string"
+                          },
+                          "notice": {
                             "type": "string"
                           }
                         },
@@ -1296,6 +1318,78 @@
                       "minLength": 1,
                       "maxLength": 40
                     }
+                  },
+                  "advanced": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "children": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "have",
+                              "want",
+                              "unsure",
+                              "prefer_not_to_say"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "heightCm": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 250
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "education": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "religion": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "hometown": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": []
                   },
                   "lifestyle": {
                     "type": "object",
@@ -2534,6 +2628,106 @@
                     "type": "number",
                     "minimum": 1,
                     "maximum": 1000
+                  },
+                  "advancedFilters": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "children": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "have",
+                              "want",
+                              "unsure",
+                              "prefer_not_to_say"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "minHeightCm": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 250
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "maxHeightCm": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 100,
+                            "maximum": 250
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "education": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "religion": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "hometown": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "datingGoal": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "relationship",
+                              "friendship",
+                              "casual",
+                              "unsure"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": []
                   }
                 },
                 "required": []
@@ -4600,6 +4794,162 @@
           }
         }
       }
+    },
+    "/v1/matches/{id}/read": {
+      "post": {
+        "summary": "Persist private read cursor",
+        "operationId": "post_match_read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "messageId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "read": {
+                          "const": true,
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "read"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Structured error; requestId supports debugging",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4763,6 +5113,86 @@
               "status",
               "mode"
             ]
+          },
+          "advanced": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "children": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "have",
+                      "want",
+                      "unsure",
+                      "prefer_not_to_say"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heightCm": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 250
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "education": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "religion": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hometown": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": []
+          },
+          "personality": {
+            "type": "null",
+            "description": "Not ported in the selected Firestore core."
+          },
+          "mood": {
+            "type": "null",
+            "description": "Not ported in the selected Firestore core."
           }
         },
         "required": [
@@ -4883,6 +5313,86 @@
           "dateOfBirth": {
             "type": "string",
             "format": "date"
+          },
+          "advanced": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "children": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "have",
+                      "want",
+                      "unsure",
+                      "prefer_not_to_say"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heightCm": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 250
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "education": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "religion": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hometown": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": []
+          },
+          "personality": {
+            "type": "null",
+            "description": "Not ported in the selected Firestore core."
+          },
+          "mood": {
+            "type": "null",
+            "description": "Not ported in the selected Firestore core."
           }
         },
         "required": [
@@ -4952,6 +5462,106 @@
             "type": "number",
             "minimum": 1,
             "maximum": 1000
+          },
+          "advancedFilters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "children": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "have",
+                      "want",
+                      "unsure",
+                      "prefer_not_to_say"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "minHeightCm": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 250
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxHeightCm": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 250
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "education": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "religion": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hometown": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "datingGoal": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "relationship",
+                      "friendship",
+                      "casual",
+                      "unsure"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": []
           }
         },
         "required": [
@@ -5104,6 +5714,35 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "Database": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "const": "firestore",
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "cloud",
+              "emulator"
+            ]
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "mode",
+          "projectId",
+          "namespace"
         ]
       }
     }

@@ -18,11 +18,19 @@
     "dev:api": "npm run dev --workspace @gap/api",
     "dev:mobile": "npm run start --workspace @gap/mobile -- --host 0.0.0.0",
     "android": "node scripts/android.mjs",
-    "test:api": "npm test --workspace @gap/api --",
+    "test:api": "npm run test:firestore",
+    "test:api:reference": "npm test --workspace @gap/api --",
+    "test:firestore": "node scripts/firestore-emulator.mjs",
+    "demo:emulator": "node scripts/firestore-emulator.mjs --demo",
+    "firestore:check": "node --import tsx scripts/firestore.mjs check",
+    "firestore:seed": "node --import tsx scripts/firestore.mjs seed",
     "test:mobile": "npm test --workspace @gap/mobile -- --runInBand",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "verify": "npm run typecheck && npm run lint && npm run test:api && npm run test:mobile",
-    "smoke:demo": "node --import tsx scripts/smoke-demo.mjs"
+    "smoke:demo": "node scripts/firestore-emulator.mjs --smoke"
+  },
+  "devDependencies": {
+    "firebase-tools": "15.34.2"
   }
 }

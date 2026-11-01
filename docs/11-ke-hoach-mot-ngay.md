@@ -2,11 +2,11 @@
 
 Ngày BE: **01/11/2026, Asia/Saigon** theo yêu cầu người dùng. Ngày FE chưa được cung cấp; không tự giả định ngày 02/11. H0 là thời điểm bắt đầu implementation, không là cam kết còn đủ 8–10 giờ hôm nay. Đây là ước lượng cần điều chỉnh theo số giờ còn lại và tiêu chí chấm.
 
-D10 khóa React Native Community CLI, không Expo. D11 cho phép core P01–P05 và UI-test BE; FE-product vẫn chờ duyệt visual. Android native toolchain/build là phần đường găng P01, không tính như mở QR.
+D12 chọn Cloud Firestore; chưa có project/credentials nên cloud read/write pending; port core/emulator tiếp tục, SQL extensions P06–P10 là reference chưa cloud. [Setup Firestore](12-ket-noi-firestore.md). D10 khóa React Native Community CLI, không Expo. D11 cho phép core P01–P05 và UI-test BE; FE-product vẫn chờ duyệt visual. Android native toolchain/build là phần đường găng P01, không tính như mở QR.
 
 ## 1. Kết quả cần ưu tiên
 
-**Cam kết đề xuất để chốt:** backend local thật cho profile → discovery → like/match → chat → unmatch/block, seed/persistence, contract và màn React Native tối thiểu để bấm test. Auth có demo session minh bạch; OTP/SMS trả phí mô phỏng. Upload ảnh, GPS và các API thiết bị miễn phí được làm thật trong phạm vi đủ thời gian. Provider miễn phí cần tài khoản/config có nhánh tích hợp thật nhưng không chặn luồng core nếu chủ dự án chưa cung cấp config.
+**Phạm vi đã cho phép, cần kiểm chứng:** backend Firestore thật (đang port, chưa kiểm cloud) cho profile → discovery → like/match → chat → unmatch/block, seed/persistence, contract và màn React Native tối thiểu để bấm test. Auth có demo session minh bạch; OTP/SMS trả phí mô phỏng. Upload ảnh, GPS và các API thiết bị miễn phí được làm thật trong phạm vi đủ thời gian. Provider ngoài DB cần tài khoản/config giữ trạng thái unavailable khi thiếu. Firestore là DB chính theo D12: cloud roundtrip chờ project/credentials, không gọi emulator là cloud để đóng core.
 
 Toàn bộ 37 chức năng vẫn trong [roadmap 12 phase](04-ke-hoach-trien-khai.md). **Hoàn thành core một ngày không phải hoàn thành cả tài liệu Word.** Nếu tiêu chí chấm bắt buộc đủ ba phần, cần chốt lại phạm vi mô phỏng/nhân lực/thời gian trước khi cam kết.
 
@@ -15,7 +15,7 @@ Toàn bộ 37 chức năng vẫn trong [roadmap 12 phase](04-ke-hoach-trien-khai
 | Khoảng giờ tương đối | Công việc và task | Worker phù hợp | Đầu ra nghiệm thu |
 |---|---|---|---|
 | H0–H0.5 | P00: chốt lát core, stack, DTO/error/session, xem prototype | Integrator; người BE quyết định nghiệp vụ còn chặn | Snapshot contract, không tranh luận visual toàn bộ backlog |
-| H0.5–H1.5 | P01: workspaces, API health, SQLite migrations/seed, config, RN Community CLI native shell, scripts demo/doctor | BE foundation; worker FE-test độc lập sau contract | API + Metro + native Android build/install được; chạy lại seed không trùng |
+| H0.5–H1.5 | P01: workspaces, API health, Firestore Admin SDK/document/index, explicit seed và emulator lane, config, RN Community CLI native shell, scripts demo/doctor | BE foundation; worker FE-test độc lập sau contract | Phân biệt emulator pass và cloud pending; API + Metro + native Android build/install có bằng chứng; seed không trùng/đè |
 | H1.5–H3 | P02: demo session, me/profile, ảnh upload/quota; profile UI-test | BE domain + FE-test theo file ownership | A sửa profile, persist; không sửa được profile B; upload ảnh thật |
 | H3–H4.25 | P03: discovery basic, like/pass, unique mutual match, unmatch | BE domain; QA review transaction | Hai client tạo một match; người bị block không xuất hiện |
 | H4.25–H5.75 | P04: text chat REST + socket, retry ID, auth membership, block/report | BE realtime; FE-test dùng contract | A↔B nhận/lấy lại tin; C bị cấm; block/unmatch revoke |
@@ -40,17 +40,17 @@ Không cắt kiểm tra quyền, persistence, block/unmatch, seed an toàn để
 
 | Mức | Ưu tiên | Điều kiện |
 |---|---|---|
-| A — không chờ tài khoản ngoài | API/DB/chat local; GPS/gallery/camera; share sheet; quiz/rule/fixtures có nhãn; calendar export | Làm thật khi chức năng được chọn vào ngày demo; không tự bật mọi tính năng mở rộng |
-| B — miễn phí nhưng cần config/quyền | Google OAuth, provider nhạc, calendar cloud, nơi cung cấp bản đồ/AI free tier | Chủ dự án cung cấp cấu hình, kiểm lại điều kiện/free quota; timebox 30–45 phút cho mỗi adapter sau core |
+| A — không chờ cloud credential | Firestore emulator test riêng (không phải cloud), API/chat port; GPS/gallery/camera; share sheet; quiz/rule/fixtures có nhãn; calendar export | Làm thật khi chức năng được chọn vào ngày demo; không tự bật mọi tính năng mở rộng |
+| B — miễn phí nhưng cần config/quyền | Firestore project/ADC BE (DB chính theo D12), Google OAuth, provider nhạc, calendar cloud, nơi cung cấp bản đồ/AI free tier | Chủ dự án cung cấp cấu hình, kiểm lại điều kiện/free quota; timebox 30–45 phút cho mỗi adapter sau core |
 | C — trả phí hoặc không có free path đã kiểm chứng | SMS, provider face/liveness, payment thật, AI mất phí | Mô phỏng rõ nhãn; logic workflow local có thể là thật nhưng provider result là demo |
 
-Không ép thêm cloud chỉ vì có free tier. Không gọi thuật toán rule/template là AI thật. Không cam kết mọi provider “miễn phí” hoàn thành hôm nay khi chưa có tài khoản/quyền truy cập.
+D12 đã chọn cloud Firestore; BE setup project riêng một lần + credential riêng, FE chỉ cần API URL. Thiếu cấu hình phải báo rõ, không tự fallback SQL/emulator. Cloud evidence là checkpoint riêng; không dùng emulator pass để đóng cloud task. Không gọi thuật toán rule/template là AI thật. Không cam kết mọi provider “miễn phí” hoàn thành hôm nay khi chưa có tài khoản/quyền truy cập.
 
 ## 5. Ngày FE riêng — khoảng 8 giờ
 
 | Khoảng giờ | Công việc | Kết quả |
 |---|---|---|
-| F0–F0.5 | Clone-run, đọc contract/handoff, test API health/session; ghi lỗi setup ngay | Chạy được trên máy FE trước khi thay UI |
+| F0–F0.5 | Clone app với API URL BE dùng chung, đọc contract/handoff, test health/session; ghi lỗi setup ngay | Chạy được trên máy FE trước khi thay UI |
 | F0.5–F1.25 | Duyệt prototype core với chủ dự án; theme, typography hệ thống, glass/opaque wrapper | Tokens và navigation dùng lại được; nếu chưa duyệt giữ draft |
 | F1.25–F3.5 | Welcome/login/OTP demo, setup/edit profile, discovery, profile detail, filter sheet | Khoảng 6–7 route/sheet core dùng API thật |
 | F3.5–F5.5 | Match result/list, chat, unmatch/block/report sheet | Luồng A↔B hoàn chỉnh, keyboard/send retry đúng |
@@ -62,11 +62,12 @@ Inventory 60 màn/sheet là yêu cầu phủ cho roadmap. Một ngày FE ưu ti�
 
 ## 6. Checklist bàn giao ngắn
 
-- [ ] BE: source, lockfile, migrate/seed, hai lệnh chạy, OpenAPI/DTO/error examples, capabilities.
+- [ ] BE: source, lockfile, Firestore rules/indexes, seed explicit, setup cloud BE/API URL FE và lane emulator, OpenAPI/DTO/error examples, capabilities.
 - [ ] BE-test: login/profile/discovery/match/chat/block/unmatch bấm được trên React Native Android.
 - [ ] QA: A/B/C quyền, concurrent like, retry send, restart, clone sạch, tắt API/retry.
 - [ ] FE nhận: thiết bị, RN/CLI/React theo lockfile, JDK/SDK, cách build/install, ADB reverse 3000/8081, API URL, test accounts, known issues, API freeze.
 - [ ] FE-product: prototype đã được chủ dự án chốt; core screens và state coverage đã kiểm.
+- [ ] Cloud: project/credential riêng đã setup, health mode cloud, read/write/restart và hai client trên cùng API có evidence; hiện pending.
 - [ ] Mọi tính năng ngoài core ghi trạng thái riêng: chưa làm/demo/real/blocked-config; không đánh đồng.
 
 ## 7. Thông tin còn cần bổ sung theo lúc thực hiện

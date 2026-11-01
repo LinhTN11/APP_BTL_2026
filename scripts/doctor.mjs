@@ -1,8 +1,14 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { createServer } from "node:net";
-import { root, environment, devices, lanAddresses } from "./common.mjs";
+import {
+  root,
+  environment,
+  devices,
+  lanAddresses,
+  firestoreConfiguration,
+  isPortAvailable,
+} from "./common.mjs";
 
 const env = environment();
 let failures = 0;
@@ -18,6 +24,15 @@ check(
   existsSync(join(root, "node_modules")),
   "Dependencies installed (npm ci)"
 );
+try {
+  firestoreConfiguration(env);
+  check(
+    true,
+    `Firestore configuration selected: ${env.DATABASE_MODE}; project=${env.FIREBASE_PROJECT_ID}. Connection is checked separately with npm run firestore:check.`
+  );
+} catch (error) {
+  check(false, error.message);
+}
 check(
   Boolean(env.ANDROID_HOME && existsSync(env.ANDROID_HOME)),
   `Android SDK: ${env.ANDROID_HOME || "set ANDROID_HOME"}`
@@ -48,11 +63,11 @@ check(
   }`
 );
 for (const port of [Number(env.PORT), 8081]) {
-  const available = await new Promise((resolve) => {
-    const server = createServer();
-    server.once("error", () => resolve(false));
-    server.listen(port, "127.0.0.1", () => server.close(() => resolve(true)));
-  });
+  const host =
+    port === Number(env.PORT) && env.HOST !== "0.0.0.0"
+      ? env.HOST
+      : "127.0.0.1";
+  const available = await isPortAvailable(port, host);
   check(
     available,
     `Port ${port} ${
