@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="24.7.17">
+  <diagram id="core-v01" name="v0.1 — Core review">
+    <mxGraphModel dx="1400" dy="1300" grid="1" gridSize="8" page="1" pageWidth="1400" pageHeight="1300">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="welcome" value="S01–S04 · Chào mừng&#10;&#10;Gặp · Dành cho người 18+&#10;&#10;Bắt đầu khám phá&#10;Tôi đã có tài khoản&#10;&#10;Đồng ý → Auth → Profile" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="112" width="250" height="400" />
+        </mxCell>
+        <mxCell id="discover" value="S13–S14 · Khám phá&#10;&#10;Linh, 24 · Cà phê · Triển lãm&#10;&#10;Xem hồ sơ&#10;Bỏ qua  |  Thích&#10;&#10;Ảnh là nội dung; control nổi" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="350" y="112" width="250" height="400" />
+        </mxCell>
+        <mxCell id="filter" value="S15 · Bộ lọc&#10;&#10;Tuổi · Khoảng cách · Giới tính&#10;&#10;Độ tuổi 18–28&#10;Bán kính 15 km&#10;Áp dụng&#10;&#10;Sheet, có hủy và reset" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="660" y="112" width="250" height="400" />
+        </mxCell>
+        <mxCell id="match" value="S16 · Match mới&#10;&#10;Hai người cùng thích nhau&#10;&#10;Gửi lời chào&#10;Tiếp tục khám phá&#10;&#10;Chỉ sau xác nhận từ server" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="970" y="112" width="250" height="400" />
+        </mxCell>
+        <mxCell id="profile" value="S23 · Tôi&#10;&#10;Minh, 25 · Chưa xác minh&#10;&#10;Chỉnh hồ sơ&#10;Sở thích / Xác minh&#10;Plus · Gold&#10;&#10;Settings và quyền riêng tư" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="642" width="250" height="400" />
+        </mxCell>
+        <mxCell id="chat" value="S17–S22 · Kết nối&#10;&#10;Linh · Hội thoại&#10;&#10;Nhắn tin / GIF / Sticker&#10;Lên kế hoạch&#10;Nhập tin nhắn → Gửi&#10;&#10;Thất bại / retry / unmatch" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="350" y="642" width="250" height="400" />
+        </mxCell>
+        <mxCell id="dates" value="S41–S46 · Hẹn hò&#10;&#10;Kế hoạch cùng Linh&#10;&#10;Địa điểm / Thời gian&#10;Xem nội dung chia sẻ&#10;Trung tâm an toàn&#10;&#10;GPS/Share/SOS có đồng ý" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="660" y="642" width="250" height="400" />
+        </mxCell>
+        <mxCell id="safety" value="S34–S39 · An toàn&#10;&#10;Bạn luôn có quyền lựa chọn&#10;&#10;Báo cáo / Chặn&#10;Từ khóa cá nhân&#10;SOS mô phỏng&#10;&#10;Không cam kết cứu hộ thật" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFFFFF;strokeColor=#AAAAAA;fontColor=#333333;fontFamily=Helvetica;fontSize=15;align=left;verticalAlign=top;spacing=18;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="970" y="642" width="250" height="400" />
+        </mxCell>
+        <mxCell id="edge0" value="Đăng nhập + hồ sơ" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="welcome" target="discover">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge1" value="Bộ lọc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="discover" target="filter">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge2" value="Áp dụng / Hủy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="filter" target="discover">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge3" value="Thích hai chiều" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="discover" target="match">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge4" value="Lời chào" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="match" target="chat">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge5" value="Lên kế hoạch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="chat" target="dates">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge6" value="An toàn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="dates" target="safety">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge7" value="Trung tâm an toàn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#777777;fontColor=#555555;fontSize=11;" edge="1" parent="1" source="profile" target="safety">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

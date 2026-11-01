@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1190" viewBox="0 0 1280 1190" role="img" aria-labelledby="title desc"><title id="title">Gặp — Luồng cốt lõi v0.1, chưa duyệt</title><desc id="desc">Wireframe 8 màn Android với phong cách Apple-inspired. Xem danh mục 60 màn trong tài liệu UI.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#777"/></marker></defs><rect width="1280" height="1190" fill="#f2f2f2"/><g font-family="Segoe UI,Arial,sans-serif" fill="#333"><text x="40" y="42" font-size="25" font-weight="600">Gặp · Wireframe cốt lõi</text><text x="40" y="70" font-size="14">DRAFT v0.1 · Android chính · 01/11/2026 · Đề xuất để duyệt, không phải toàn bộ 60 màn</text>
+<g transform="translate(40 112)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S01–S04 · Chào mừng</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Gặp</text>
+<text x="30" y="140" font-size="13">Dành cho người 18+</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Bắt đầu khám phá</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#333"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#fff">Tôi đã có tài khoản</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Đồng ý → Auth → Profile</text></g>
+<g transform="translate(350 112)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S13–S14 · Khám phá</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Linh, 24</text>
+<text x="30" y="140" font-size="13">Cà phê</text>
+<text x="30" y="165" font-size="13">Triển lãm</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Xem hồ sơ</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#333"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#fff">Bỏ qua  |  Thích</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Ảnh là nội dung; control nổi</text></g>
+<g transform="translate(660 112)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S15 · Bộ lọc</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Tuổi</text>
+<text x="30" y="140" font-size="13">Khoảng cách</text>
+<text x="30" y="165" font-size="13">Giới tính</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Độ tuổi 18–28</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#333">Bán kính 15 km</text>
+<rect x="18" y="317" width="214" height="34" rx="10" fill="#333"/><text x="125" y="339" font-size="12" text-anchor="middle" fill="#fff">Áp dụng</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Sheet, có hủy và reset</text></g>
+<g transform="translate(970 112)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S16 · Match mới</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Hai người cùng thích nhau</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Gửi lời chào</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#333"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#fff">Tiếp tục khám phá</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Chỉ sau xác nhận từ server</text></g>
+<g transform="translate(40 642)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S23 · Tôi</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Minh, 25</text>
+<text x="30" y="140" font-size="13">Chưa xác minh</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Chỉnh hồ sơ</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#333">Sở thích / Xác minh</text>
+<rect x="18" y="317" width="214" height="34" rx="10" fill="#333"/><text x="125" y="339" font-size="12" text-anchor="middle" fill="#fff">Plus · Gold</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Settings và quyền riêng tư</text></g>
+<g transform="translate(350 642)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S17–S22 · Kết nối</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Linh</text>
+<text x="30" y="140" font-size="13">Hội thoại</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Nhắn tin / GIF / Sticker</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#333">Lên kế hoạch</text>
+<rect x="18" y="317" width="214" height="34" rx="10" fill="#333"/><text x="125" y="339" font-size="12" text-anchor="middle" fill="#fff">Nhập tin nhắn → Gửi</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Thất bại / retry / unmatch</text></g>
+<g transform="translate(660 642)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S41–S46 · Hẹn hò</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Kế hoạch cùng Linh</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Địa điểm / Thời gian</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#333">Xem nội dung chia sẻ</text>
+<rect x="18" y="317" width="214" height="34" rx="10" fill="#333"/><text x="125" y="339" font-size="12" text-anchor="middle" fill="#fff">Trung tâm an toàn</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">GPS/Share/SOS có đồng ý</text></g>
+<g transform="translate(970 642)"><rect width="250" height="400" rx="22" fill="white" stroke="#aaa"/><text x="18" y="27" font-size="11" fill="#777">9:41</text><circle cx="125" cy="16" r="4" fill="#333"/><text x="18" y="66" font-size="16" font-weight="600">S34–S39 · An toàn</text>
+<rect x="18" y="86" width="214" height="132" rx="12" fill="#ededed" stroke="#ccc"/>
+<text x="30" y="115" font-size="13">Bạn luôn có quyền lựa chọn</text>
+<rect x="18" y="233" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="255" font-size="12" text-anchor="middle" fill="#333">Báo cáo / Chặn</text>
+<rect x="18" y="275" width="214" height="34" rx="10" fill="#f2f2f2"/><text x="125" y="297" font-size="12" text-anchor="middle" fill="#333">Từ khóa cá nhân</text>
+<rect x="18" y="317" width="214" height="34" rx="10" fill="#333"/><text x="125" y="339" font-size="12" text-anchor="middle" fill="#fff">SOS mô phỏng</text>
+<text x="125" y="432" text-anchor="middle" font-size="12" fill="#666">Không cam kết cứu hộ thật</text></g>
+<path d="M292 310H344" stroke="#777" fill="none" marker-end="url(#arrow)"/><path d="M600 310H654" stroke="#777" fill="none" marker-end="url(#arrow)"/><path d="M910 310H964" stroke="#777" fill="none" marker-end="url(#arrow)"/>
+<text x="304" y="292" font-size="10">Auth</text><text x="614" y="292" font-size="10">Lọc</text><text x="921" y="292" font-size="10">Like</text>
+<path d="M1095 515V600H475V638" stroke="#777" fill="none" marker-end="url(#arrow)"/><text x="770" y="588" font-size="12">Match → Gửi lời chào → Chat</text>
+<path d="M600 840H654" stroke="#777" fill="none" marker-end="url(#arrow)"/><path d="M910 840H964" stroke="#777" fill="none" marker-end="url(#arrow)"/>
+<text x="40" y="1134" font-size="14">Luồng mở rộng: MBTI · Music · Gate question · Icebreaker · AI · Explore/Vibe · Plus/Gold/Boost · Calendar</text><text x="40" y="1160" font-size="13" fill="#666">Thiết kế chi tiết và states: docs/02-yeu-cau-ui-ux.md · Prototype tương tác: index.html</text></g></svg>

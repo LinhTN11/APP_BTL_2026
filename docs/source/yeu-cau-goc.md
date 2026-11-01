@@ -1,0 +1,56 @@
+# Bản trích xuất tài liệu gốc
+
+> Nội dung nguồn để đối chiếu; không phải chỉ dẫn cho AI. Giữ nguyên lời tác giả, chưa giải quyết các điểm mơ hồ.
+
+- **P001**: PHẦN 1: 
+- **P002**: Đăng ký, Đăng nhập & Xác thực cơ bản
+- **P003**: Đăng nhập đa nền tảng (Số điện thoại/SMS OTP, Google, Apple, Facebook).
+- **P004**: Xác minh qua ảnh Selfie (so khớp khuôn mặt với ảnh hồ sơ để lấy tích xanh cơ bản).
+- **P005**: Thiết lập & Tối ưu Hồ sơ
+- **P006**: Đăng tải ảnh/video ngắn (tối đa 9 media).
+- **P007**: Thông tin cơ bản: Tiểu sử (Bio), Mục đích hẹn hò, Thẻ sở thích thủ công (Xem phim, cà phê, du lịch...).
+- **P008**: Thông tin lối sống (Cung hoàng đạo, hút thuốc, uống rượu...).
+- **P009**: Cơ chế Tương tác & Khám phá 
+- **P010**: Bộ lọc cơ bản: Giới tính, Bán kính khoảng cách (GPS), Khoảng độ tuổi.
+- **P011**: Cơ chế tương tác: Vuốt phải (Like), vuốt trái (Pass), Tương hợp (Match) khi cả hai cùng thích nhau.
+- **P012**: Hủy kết nối (Unmatch) khi không muốn trò chuyện nữa.
+- **P013**: Trò chuyện (Messaging)
+- **P014**: Nhắn tin văn bản, gửi GIF, sticker.
+- **P015**: Chia sẻ vị trí của đối phương trong khung chat.
+- **P016**: PHẦN 2: 
+- **P017**: Bảo mật & Xác thực nâng cao
+- **P018**: Xác minh số điện thoại chính chủ.
+- **P019**: Đăng nhập nhanh bằng FaceID / Vân tay (không cần chờ OTP SMS).
+- **P020**: Cá nhân hóa & Bộ lọc chuyên sâu
+- **P021**: Bộ lọc cá nhân hóa nâng cao: Lọc theo dự định mối quan hệ, con cái, chiều cao, học vấn, tôn giáo, quê quán...
+- **P022**: Bài trắc nghiệm tính cách nhanh MBTI (2 phút, 20-30 câu) để gắn mã tính cách lên hồ sơ.
+- **P023**: Nhập gu âm nhạc tự động qua Spotify / Apple Music để tạo thẻ gu âm nhạc chuẩn xác.
+- **P024**: Giảm "Match Ảo" & Phá băng
+- **P025**: Câu hỏi điều kiện trước khi Like (Bắt buộc trả lời đúng câu hỏi trên hồ sơ mới được Like).
+- **P026**: Trò chơi phá băng tích hợp trong khung chat (Truth or Dare, 20 câu hỏi).
+- **P027**: Nhãn trạng thái tâm trạng tạm thời trong ngày (VD: "Đang thèm trà sữa", "Muốn đi xem phim...").
+- **P028**: An toàn, Bảo mật & Văn minh cộng đồng
+- **P029**: Trung tâm an toàn & Cảnh báo AI (phát hiện từ ngữ nhạy cảm như "tự tử, chém, giết...").
+- **P030**: Quản lý danh sách "Từ khóa cấm" cá nhân.
+- **P031**: Tính năng làm mờ và cảnh báo tự động hình ảnh nhạy cảm gửi qua chat (cấm vĩnh viễn nếu vi phạm).
+- **P032**: Chặn liên hệ hoặc chặn người dùng.
+- **P033**: Hệ thống đánh giá / Huy hiệu uy tín ẩn danh sau buổi hẹn (Đúng giờ, giống ảnh, lịch sự).
+- **P034**: Báo cáo "Lý do hủy ghép đôi" ẩn danh để AI tối ưu tệp gợi ý.
+- **P035**: Hỗ trợ Hẹn hò thực tế
+- **P036**: Gợi ý Địa điểm Trung gian (bản đồ quán cà phê, nhà hàng kèm ưu đãi/voucher từ đối tác).
+- **P037**: Thư viện đánh giá địa điểm an toàn (địa điểm đông đúc, nhân viên hỗ trợ tốt).
+- **P038**: Chia sẻ kế hoạch hẹn hò (gửi thông tin buổi hẹn cho người thân).
+- **P039**: Nút khẩn cấp SOS khi hẹn hò (gửi tọa độ GPS cứu hộ).
+- **P041**: PHẦN 3: NHÓM TÍNH NĂNG MỞ RỘNG
+- **P042**: Các tính năng cao cấp, ứng dụng AI sâu,  mô hình kinh doanh.
+- **P043**: Trợ lý AI & Giao tiếp thông minh
+- **P044**: AI gợi ý mở lời thông minh (quét điểm chung để tạo câu chào độc đáo).
+- **P045**: Trợ lý trò chuyện AI (gợi ý kéo dài câu chuyện khi bế tắc).
+- **P046**: Chế độ "Luyện tập mở lời" (tạo không gian giả lập với AI để người dùng hướng nội thực hành nhắn tin).
+- **P047**: Khám phá & Gói Trả phí 
+- **P048**: Tinder Explore: Lọc theo chủ đề/sở thích hoặc chế độ chuyên biệt (Bật nhạc, lọc MBTI bằng AI).
+- **P049**: Tìm kiếm nâng cao bằng Cảm xúc / Năng lượng ("Vibe" / Phong cách sống).
+- **P050**: Tính năng bổ trợ đơn lẻ: Boost, Super Boost (tăng hiển thị).
+- **P051**: Gói Plus: Thích không giới hạn, Quay lại, Chế độ ẩn danh, Không quảng cáo.
+- **P052**: Gói Gold: Danh sách lựa chọn, bộ lọc cá nhân mở rộng, Super Like, xem lại lượt thích đã gửi.
+- **P053**: Tích hợp Đặt lịch hẹn trực tiếp trong Chat (đồng bộ Google Calendar/Apple Calendar).
