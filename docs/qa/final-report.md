@@ -5,7 +5,7 @@ Ngày 01/11/2026. **Đã có core chạy với Firestore Emulator; chưa kết n
 ## Đã thực hiện
 
 - React Native Community CLI20.2.0, RN0.88.1, Android native project; không Expo. Fastify primary server dùng Firebase Admin SDK14.5.0/Firestore.
-- Auth/session và OTP demo có rate/expiry/replay; hồ sơ, ảnh tối đa9, bộ lọc, vị trí riêng có đồng ý; mutual match transaction; chat lưu bền/idempotency/cursor/realtime; unmatch/block/report và private read/unmatch record.
+- Auth/session và OTP demo có rate/expiry/replay; hồ sơ, ảnh tối đa9, bộ lọc, vị trí riêng có đồng ý; mutual match transaction; chat lưu document/idempotency/cursor/realtime; unmatch/block/report và private read/unmatch record.
 - UI-test có nút gọi API thật, loading/error/retry, secure local session, đổi tài khoản không giữ chat/draft, keyboard Android, profile save guard, safety/swipe serialization và fast-send payload.
 - Scripts kiểm tra kết nối, seed create-only, chạy native app/API/Metro; cloud thiếu cấu hình fail rõ, emulator chọn riêng. Direct client Firestore rules deny all; admin credential chỉ BE.
 
@@ -18,7 +18,7 @@ Ngày 01/11/2026. **Đã có core chạy với Firestore Emulator; chưa kết n
 | HTTP smoke | Firestore Emulator: A/B auth→discovery→mutual match→chat persisted→C denied→block revoke đạt |
 | Android | x86_64 debug build/install đã đạt (JDK21, SDK37, Gradle9.4.1); app gọi API Firestore Emulator, gửi tin, B HTTP đọc/phản hồi, A nhận realtime; IME không che Send |
 | Truy cập trực tiếp | REST client không auth vào emulator nhận403; không phải bằng chứng rules đã deploy cloud |
-| Clone | SQL snapshot cũ đã qua clean archive; **chưa dùng evidence đó để tuyên bố Firestore head clone/native cloud đạt** |
+| Clone | Firestore snapshot `b82acd3`, thư mục có dấu cách: npmci1517 packages/38s, setup, typecheck và emulator HTTP smoke đạt; chưa clean native build/cloud |
 | Cloud | Chưa có project/credential; chưa thực hiện cloud read/write, seed, deploy rules/indexes |
 
 ## Phần chưa hoàn tất

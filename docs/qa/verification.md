@@ -14,6 +14,7 @@ Cập nhật 01/11/2026 (Asia/Saigon). Bằng chứng dưới đây phân biệt
 
 - Auth/profile/media và matching/chat/safety suites dùng Firebase Admin SDK kết nối **Firestore Emulator** với project giả lập `demo-app-cuoi-ky`, host `127.0.0.1:8089`, namespace ngẫu nhiên: tổng cộng **10 passed, 0 failed, 0 skipped**; khoảng 55 giây theo báo cáo cuối.
 - HTTP smoke trên emulator đã pass theo báo cáo tích hợp. Đây là evidence emulator, không phải cloud.
+- Clean source archive của `b82acd3` tại đường dẫn có dấu cách `gap firestore clone 72593919`: `npm ci` cài1517 packages trong38s; setup, API/mobile typecheck và Firestore Emulator HTTP smoke đều đạt. Dùng toolchain/cache máy hiện tại và emulator đang chạy; không là cold-machine/native build hoặc cloud test.
 - Lượt tích hợp cuối: `npm run verify` đạt typecheck, ESLint, **15/15 Firestore tests, 0 skipped** và mobile 19/19; sau sửa fast-send ở UI, chạy lại mobile typecheck/lint và **20/20 mobile tests** đều đạt. Backend không thay đổi sau lượt 15 bài.
 - Cấu hình thiếu emulator host bị chặn trước SDK; session logout/expiry/account disable trong upload chậm trả 401, không ghi DB/file. Socket kiểm tra trạng thái kết nối sau các bước await trước khi gắn listener.
 - Native Android với API Firestore Emulator: A đăng nhập/discovery/media, A và B mutual Like, A gửi tin; client B HTTP đọc document qua API và phản hồi, A nhận realtime. Kiểm tra dữ liệu đầy đủ sau sửa fast-send; ảnh [native-firestore-chat.png](native-firestore-chat.png). Đây là một client Android + một client HTTP, không phải hai máy Android.
@@ -26,6 +27,7 @@ Cập nhật 01/11/2026 (Asia/Saigon). Bằng chứng dưới đây phân biệt
 - Firebase project/credentials chưa có; chưa kết nối, đọc/ghi hoặc chạy smoke trên Cloud Firestore thật. Emulator pass không chứng minh IAM, indexes đã triển khai, cloud durability hoặc cloud billing/quota.
 - Các review fixes đã qua kiểm tra nêu trên; riêng timing socket disconnect trong từng await chưa có bài regression chuyên biệt, đã kiểm tra source guard và suite lifecycle hiện có.
 - Clean SQL archive chưa chạy clean Gradle/native build. iOS chưa build.
+- Firestore archive mới đã kiểm tra như trên; native Gradle build trong clean archive vẫn chưa thực hiện.
 - Chưa có xác nhận đầy đủ cho quyền GPS/gallery grant-denial trên máy, TalkBack, cỡ chữ 200%, accessibility acceptance hoặc hai client Android native realtime end-to-end.
 - Video, SMS/OAuth/Google sign-in, live selfie/biometrics, Google auth, AI thật và provider cloud chưa được cung cấp/kiểm tra như thật; provider credentials không có. Selfie là pending/demo; GIF/sticker là nhãn catalog, không animated. Ảnh lưu protected backend filesystem, không phải Cloud Storage.
 - Các module SQL mở rộng P06–P10 chỉ là reference: chưa port thành Firestore feature, chưa được coi là đã hoàn thành.

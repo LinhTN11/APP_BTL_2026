@@ -35,6 +35,8 @@ PORT=3000
 
 Không đặt `FIRESTORE_EMULATOR_HOST` khi kiểm tra cloud. Backend phải báo thiếu config hoặc lỗi quyền rõ ràng, **không tự đổi sang SQLite hay emulator**.
 
+Với thư mục hiện tại, nếu bạn lưu khóa theo tên gợi ý thì đường dẫn là `C:/Users/trann/Desktop/APP-Cuoi-Ky/secrets/firebase-service-account.json`. Khóa này không được tạo tự động. Trong Firestore Console, dữ liệu của namespace mặc định nằm dưới collection `projects` → document `app-cuoi-ky` → các collection con như `profiles`, `matches`, `messages`.
+
 Khi code chuyển đổi đã được kiểm chứng, chạy:
 
 ```powershell

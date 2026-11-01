@@ -1,5 +1,7 @@
 # Checklist riêng cho backend, UI kiểm thử và frontend sản phẩm
 
+Trạng thái kiểm chứng mới nhất nằm ở [báo cáo core Firestore](qa/final-report.md). Core đã chạy trên Emulator; cloud project chưa có. Các checkbox nghiệm thu toàn bộ chức năng vẫn mở khi còn provider/thiết bị/phạm vi chưa đáp ứng; không suy ra toàn bộ việc chưa được triển khai chỉ từ checkbox trống.
+
 Trạng thái 01/11/2026: D12 (USER) chọn Firestore; core P01–P05 đang port, SQL cũ là reference. Chưa có project/credentials, cloud read/write chưa kiểm chứng; P06–P10 cần port riêng. [Setup cloud](12-ket-noi-firestore.md); React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
 
 **Ngày:** 01/11/2026. **Trạng thái ban đầu:** toàn bộ implementation chưa bắt đầu; tài liệu/prototype không được dùng để đánh dấu backend hoặc màn RN đã hoàn thành.
