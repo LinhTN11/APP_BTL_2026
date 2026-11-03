@@ -13,20 +13,21 @@ import {
   BackHandler,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StatusBar,
   Text,
-  useColorScheme,
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { io } from 'socket.io-client';
 import {
   Api,
+  ApiError,
   loadAllMessages,
+  loadAllPages,
   readableError,
   type Match,
   type Message,
+  type Profile,
 } from './src/api';
 import { chatReducer, freshChatState } from './src/chat';
 import {
@@ -36,28 +37,36 @@ import {
   type SavedSession,
 } from './src/session';
 import {
-  light,
   dark,
   Palette,
   s,
   Button,
   Feedback,
   Label,
-  Page,
-  Title,
   useTask,
   confirmAction,
+  GlassProvider,
 } from './src/ui';
+import BrandLogo from './src/BrandLogo';
 import Login from './src/screens/Login';
+import SceneTransition, { ArrivalGreeting } from './src/SceneTransition';
+import SceneBackdrop from './src/SceneBackdrop';
+import GlassTabs, { type WorkspaceScreen } from './src/GlassTabs';
+import Matches from './src/screens/Matches';
 import Discover from './src/screens/Discover';
 import MyProfile from './src/screens/MyProfile';
 import Safety from './src/screens/Safety';
 import Chat from './src/screens/Chat';
+import { ThemeProvider } from './src/theme';
 export default function App() {
-  const p = useColorScheme() === 'dark' ? dark : light;
+  return <ThemeProvider><AppContent /></ThemeProvider>;
+}
+function AppContent() {
+  const p = React.useContext(Palette);
   const [saved, setSaved] = useState<SavedSession | null>(null);
   const [restoring, setRestoring] = useState(true);
-  const [initialUrl, setInitialUrl] = useState('http://10.0.2.2:3000');
+  const [welcome, setWelcome] = useState(false);
+  const [initialUrl, setInitialUrl] = useState(__DEV__ ? 'http://127.0.0.1:3000' : '');
   const [rootError, setRootError] = useState('');
   const current = useRef<SavedSession | null>(null);
   const expire = useCallback((token: string) => {
@@ -73,6 +82,10 @@ export default function App() {
       ),
     );
   }, []);
+  const sessionToken = saved?.session.token;
+  const expireCurrentSession = useCallback(() => {
+    if (sessionToken) { expire(sessionToken); }
+  }, [expire, sessionToken]);
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -89,7 +102,18 @@ export default function App() {
         }
       } catch (e) {
         if (alive) {
-          setRootError(`Chưa khôi phục được phiên: ${readableError(e)}`);
+          if (e instanceof ApiError && e.status === 401) {
+            try {
+              await clearSession();
+              setRootError('Phiên cũ đã hết hạn. Đăng nhập lại để tiếp tục.');
+            } catch {
+              setRootError(
+                'Không xoá được phiên cũ trong kho bảo mật. Hãy thử khởi động lại ứng dụng.',
+              );
+            }
+          } else {
+            setRootError(`Chưa khôi phục được phiên: ${readableError(e)}`);
+          }
         }
       } finally {
         if (alive) {
@@ -135,6 +159,7 @@ export default function App() {
       throw new Error(`Không lưu được phiên bảo mật: ${readableError(e)}`);
     }
     current.current = value;
+    setWelcome(true);
     setSaved(value);
     setInitialUrl(value.baseUrl);
     setRootError('');
@@ -167,44 +192,57 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <Palette.Provider value={p}>
-        <SafeAreaView style={[s.root, { backgroundColor: p.bg }]}>
-          <StatusBar barStyle={p === dark ? 'light-content' : 'dark-content'} />
-          <KeyboardAvoidingView
-            style={s.root}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            {restoring ? (
-              <View style={s.content}>
-                <ActivityIndicator />
-                <Label>Đang kiểm tra phiên bảo mật…</Label>
-              </View>
-            ) : saved ? (
-              <Workspace
-                key={saved.session.token}
-                saved={saved}
-                expire={() => expire(saved.session.token)}
-                logout={logout}
-              />
-            ) : (
-              <Login
-                initialUrl={initialUrl}
-                onLogin={loggedIn}
-                rootError={rootError}
-              />
-            )}
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+        <GlassProvider>
+          <SafeAreaView style={[s.root, { backgroundColor: p.bg }]}>
+            <SceneBackdrop active={!restoring} />
+            <StatusBar
+              barStyle={p === dark ? 'light-content' : 'dark-content'}
+            />
+            <KeyboardAvoidingView
+              style={s.root}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+              <SceneTransition
+                sceneKey={restoring ? 'restore' : saved ? 'workspace' : 'login'}
+                style={s.root}
+              >
+                {restoring ? (
+                  <View style={s.content}>
+                    <ActivityIndicator />
+                    <Label>Đang kiểm tra phiên bảo mật…</Label>
+                  </View>
+                ) : saved ? (
+                  <Workspace
+                    key={saved.session.token}
+                    saved={saved}
+                    welcome={welcome}
+                    expire={expireCurrentSession}
+                    logout={logout}
+                  />
+                ) : (
+                  <Login
+                    initialUrl={initialUrl}
+                    onLogin={loggedIn}
+                    rootError={rootError}
+                  />
+                )}
+              </SceneTransition>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </GlassProvider>
       </Palette.Provider>
     </SafeAreaProvider>
   );
 }
-type Screen = 'discover' | 'matches' | 'profile' | 'safety';
+type Screen = WorkspaceScreen;
 function Workspace({
   saved,
+  welcome,
   expire,
   logout,
 }: {
   saved: SavedSession;
+  welcome: boolean;
   expire: () => void;
   logout: () => Promise<void>;
 }) {
@@ -216,6 +254,9 @@ function Workspace({
   const [screen, setScreen] = useState<Screen>('discover');
   const [active, setActive] = useState<Match | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchesLoaded, setMatchesLoaded] = useState(false);
+  const [matchesError, setMatchesError] = useState('');
+  const [displayName, setDisplayName] = useState(saved.session.user.displayName);
   const [socketState, setSocketState] = useState('Đang kết nối…');
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
   const profileDirty = useRef(false);
@@ -225,12 +266,31 @@ function Workspace({
   const activeRef = useRef(active);
   activeRef.current = active;
   const alive = useRef(true);
+  const endedMatchIds = useRef(new Set<string>());
   const loadMatches = useCallback(async () => {
-    const result = await api.request<Match[]>('/v1/matches');
-    if (alive.current) {
-      setMatches(result.data);
+    try {
+      const result = await loadAllPages<Match>(api, '/v1/matches');
+      // An older REST snapshot must not undo a lifecycle event already received.
+      const available = result.filter(match => !endedMatchIds.current.has(match.id));
+      if (alive.current) {
+        setMatches(available);
+        setMatchesLoaded(true);
+        setMatchesError('');
+      }
+      return available;
+    } catch (error) {
+      if (alive.current) {
+        setMatchesError(readableError(error));
+      }
+      throw error;
     }
   }, [api]);
+  const profileSaved = useCallback((profile?: Profile) => {
+    if (profile) {
+      setDisplayName(profile.displayName);
+    }
+    setVersion(value => value + 1);
+  }, []);
   const onMessages = useCallback(
     (matchId: string, messages: Message[]) => {
       if (alive.current) {
@@ -244,9 +304,12 @@ function Workspace({
       if (!alive.current) {
         return;
       }
+      endedMatchIds.current.add(matchId);
       dispatch({ type: 'ended', sessionKey: userId, matchId });
       setMatches(previous => previous.filter(match => match.id !== matchId));
       if (activeRef.current?.id === matchId) {
+        // The socket callback and Firestore listener can report the same end before React renders.
+        activeRef.current = null;
         setActive(null);
         setScreen('matches');
         Alert.alert('Kết nối đã kết thúc', 'Quyền đọc/gửi chat đã bị thu hồi.');
@@ -261,7 +324,7 @@ function Workspace({
     };
   }, []);
   useEffect(() => {
-    void task.run(loadMatches); // eslint-disable-next-line react-hooks/exhaustive-deps
+    void task.run(async () => { await loadMatches(); }); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadMatches]);
   useEffect(() => {
     const socket = io(saved.baseUrl, {
@@ -270,26 +333,35 @@ function Workspace({
       reconnection: true,
     });
     socketRef.current = socket;
+    let syncRunning = false;
+    let syncAgain = false;
+    let disposed = false;
+    let matchRefresh: ReturnType<typeof setTimeout> | undefined;
     const sync = async () => {
-      setSocketState('Đã kết nối realtime');
+      if (disposed) {
+        return;
+      }
+      if (syncRunning) {
+        syncAgain = true;
+        return;
+      }
+      syncRunning = true;
+      setSocketState(socket.connected ? 'Đã kết nối realtime' : 'Đang kết nối lại…');
       try {
-        const result = await api.request<Match[]>('/v1/matches');
-        if (!alive.current) {
+        const result = await loadMatches();
+        if (!alive.current || disposed) {
           return;
         }
-        setMatches(result.data);
         if (
           activeRef.current &&
-          !result.data.some(
+          !result.some(
             match =>
               match.id === activeRef.current?.id && match.status === 'active',
           )
         ) {
           ended(activeRef.current.id);
         }
-        for (const match of result.data.filter(
-          item => item.status === 'active',
-        )) {
+        for (const match of result.filter(item => item.status === 'active')) {
           socket
             .timeout(8000)
             .emit(
@@ -316,8 +388,14 @@ function Workspace({
           onMessages(id, await loadAllMessages(api, id));
         }
       } catch (e) {
-        if (alive.current) {
+        if (alive.current && !disposed) {
           setSocketState(`Chưa đồng bộ: ${readableError(e)}`);
+        }
+      } finally {
+        syncRunning = false;
+        if (syncAgain && !disposed) {
+          syncAgain = false;
+          void sync();
         }
       }
     };
@@ -334,17 +412,23 @@ function Workspace({
     socket.on('match:ended', (event: { matchId: string }) =>
       ended(event.matchId),
     );
+    socket.on('match:created', () => {
+      clearTimeout(matchRefresh);
+      matchRefresh = setTimeout(() => { void sync(); }, 120);
+    });
     const appState = AppState.addEventListener('change', state => {
       if (state === 'active') {
         void sync();
       }
     });
     return () => {
+      disposed = true;
+      clearTimeout(matchRefresh);
       appState.remove();
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, [api, ended, onMessages, saved]);
+  }, [api, ended, onMessages, saved, loadMatches]);
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket?.connected) {
@@ -400,6 +484,9 @@ function Workspace({
     }
   };
   const open = (match: Match) => {
+    if (endedMatchIds.current.has(match.id)) {
+      return;
+    }
     setActive(match);
     setScreen('matches');
   };
@@ -407,126 +494,112 @@ function Workspace({
   return (
     <View style={s.root}>
       <View
-        style={[s.toolbar, { backgroundColor: p.panel, borderColor: p.border }]}
+        style={{
+          paddingHorizontal: 22,
+          paddingVertical: 10,
+          backgroundColor: p.bg,
+        }}
       >
-        <Text style={[s.heading, { color: p.ink }]}>
-          {saved.session.user.displayName} · UI-test
-        </Text>
-        <Text style={{ color: p.muted }}>{socketState}</Text>
-        <Button
-          label="Đổi tài khoản / đăng xuất"
-          onPress={() =>
-            confirmAction(
-              'Đăng xuất?',
-              'Phiên, lịch sử trên màn hình và bản nháp sẽ xoá khỏi thiết bị.',
-              () => {
-                void logout();
-              },
-            )
-          }
-        />
+        <View style={s.toolbarRow}>
+          <BrandLogo size={42} />
+          <Text numberOfLines={1} style={[s.accountName, { color: p.ink }]}>
+            Chào {displayName || 'bạn'}
+          </Text>
+        </View>
       </View>
       <Feedback task={task} />
-      {active ? (
-        <Chat
-          key={active.id}
-          api={api}
-          match={active}
-          userId={userId}
-          messages={chat.messages[active.id] ?? []}
-          draft={chat.drafts[active.id] ?? ''}
-          failed={chat.pending[active.id] ?? null}
-          setFailed={value =>
-            dispatch({
-              type: 'pending',
-              sessionKey: userId,
-              matchId: active.id,
-              value,
-            })
-          }
-          setDraft={text =>
-            dispatch({
-              type: 'draft',
-              sessionKey: userId,
-              matchId: active.id,
-              text,
-            })
-          }
-          onMessages={messages => onMessages(active.id, messages)}
-          onEnded={() => ended(active.id)}
-          onBack={() => setActive(null)}
-        />
-      ) : screen === 'discover' ? (
-        <Discover
-          key={version}
-          api={api}
-          onMatch={match => {
-            void loadMatches();
-            open(match);
-          }}
-        />
-      ) : screen === 'matches' ? (
-        <Page>
-          <Title>Kết nối</Title>
-          <Button
-            label="Tải lại kết nối"
-            disabled={task.busy}
-            onPress={() => task.run(loadMatches)}
-          />
-          {!matches.length && (
-            <Label muted>
-              Chưa có kết nối. A và B cần cùng bấm Thích nhau.
-            </Label>
-          )}
-          {matches.map(match => (
-            <Button
-              key={match.id}
-              label={`${match.otherUser.displayName} · ${match.status}`}
-              onPress={() => open(match)}
-            />
-          ))}
-        </Page>
-      ) : screen === 'profile' ? (
-        <MyProfile
-          onDirty={value => {
-            profileDirty.current = value;
-          }}
-          api={api}
-          onSaved={() => setVersion(value => value + 1)}
-        />
-      ) : (
-        <Safety api={api} />
-      )}
-      {!active && (
-        <View
-          style={[s.tabs, { backgroundColor: p.panel, borderColor: p.border }]}
-        >
-          {(
-            [
-              ['discover', 'Khám phá'],
-              ['matches', 'Kết nối'],
-              ['profile', 'Tôi'],
-              ['safety', 'An toàn'],
-            ] as const
-          ).map(([id, label]) => (
-            <Pressable
-              key={id}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: screen === id }}
-              onPress={() => changeScreen(id)}
-              style={s.tab}
-            >
-              <Text
-                style={{
-                  color: screen === id ? p.accent : p.muted,
-                }}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          ))}
+      {screen === 'matches' && !socketState.startsWith('Đã kết nối') && (
+        <View style={s.horizontalInset}>
+          <Label muted>
+            Đang kết nối lại. Bạn vẫn có thể tải tin nhắn mới.
+          </Label>
         </View>
       )}
+      <SceneTransition
+        sceneKey={active ? `chat:${active.id}` : screen}
+        style={s.root}
+      >
+        {active ? (
+          <Chat
+            key={active.id}
+            api={api}
+            match={active}
+            userId={userId}
+            messages={chat.messages[active.id] ?? []}
+            draft={chat.drafts[active.id] ?? ''}
+            failed={chat.pending[active.id] ?? null}
+            setFailed={value =>
+              dispatch({
+                type: 'pending',
+                sessionKey: userId,
+                matchId: active.id,
+                value,
+              })
+            }
+            setDraft={text =>
+              dispatch({
+                type: 'draft',
+                sessionKey: userId,
+                matchId: active.id,
+                text,
+              })
+            }
+            onMessages={messages => onMessages(active.id, messages)}
+            onEnded={() => ended(active.id)}
+            onBack={() => setActive(null)}
+          />
+        ) : screen === 'discover' ? (
+          <Discover
+            onEditProfile={() => changeScreen('profile')}
+            key={version}
+            api={api}
+            onMatch={match => {
+              void loadMatches();
+              open(match);
+            }}
+          />
+        ) : screen === 'matches' ? (
+          <Matches
+            matches={matches}
+            loaded={matchesLoaded}
+            error={matchesError}
+            busy={task.busy}
+            reload={() => {
+              void task.run(async () => { await loadMatches(); });
+            }}
+            open={open}
+          />
+        ) : screen === 'profile' ? (
+          <View style={s.root}>
+            <View style={s.accountActions}>
+              <Button
+                compact
+                label="Đăng xuất"
+                onPress={() =>
+                  confirmAction(
+                    'Đăng xuất?',
+                    'Bạn có thể đăng nhập lại bằng email hoặc Google.',
+                    () => {
+                      void logout();
+                    },
+                  )
+                }
+              />
+            </View>
+            <MyProfile
+              onDirty={value => {
+                profileDirty.current = value;
+              }}
+              api={api}
+              onSaved={profileSaved}
+            />
+          </View>
+        ) : (
+          <Safety api={api} />
+        )}
+      </SceneTransition>
+      {welcome && <ArrivalGreeting name={saved.session.user.displayName} />}
+      {!active && <GlassTabs selected={screen} onSelect={changeScreen} />}
     </View>
   );
 }

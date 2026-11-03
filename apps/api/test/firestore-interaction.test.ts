@@ -672,3 +672,97 @@ test(
     }
   }
 );
+
+
+test("real-data mode denies previously issued fixture sessions and unavailable catalogs", options, async () => {
+  const f = await fixture();
+  try {
+    const a = await f.login("A");
+    const { hash } = await import("../src/firestore/context.js");
+    // Legacy fixture sessions had no mode marker; user provenance must deny them too.
+    const legacyToken = randomUUID();
+    await f.app.firestore.ref("sessions", hash(legacyToken)).set({userId:demoIds.A,expiresAt:Date.now()+60000,revokedAt:null});
+    const live = await createFirestoreApp({...f.config, demoMode:false, seedDemo:false});
+    try {
+      assert.equal((await f.call("GET", "/v1/me", a.token, undefined, live)).statusCode, 401);
+      assert.equal((await f.call("GET", "/v1/me", legacyToken, undefined, live)).statusCode, 401);
+      assert.equal((await f.call("POST", "/v1/demo/sessions", undefined, {account:"A"}, live)).statusCode, 404);
+      // A real account/session remains usable without Firebase provider calls in this emulator test.
+      const userId = randomUUID(), token = randomUUID();
+      await live.firestore.ref("users", userId).set({id:userId, accountStatus:"active"});
+      await live.firestore.ref("sessions", hash(token)).set({userId, expiresAt:Date.now()+60000, revokedAt:null});
+      assert.equal((await f.call("GET", "/v1/discovery", token, undefined, live)).json().data.length, 0);
+      assert.equal((await f.call("GET", `/v1/profiles/${demoIds.A}`, token, undefined, live)).statusCode, 404);
+      const seedProfile = (await live.firestore.ref("profiles", demoIds.A).get()).data()!;
+      assert.equal((await f.call("GET", `/v1/media/${seedProfile.mediaIds[0]}/content`, token, undefined, live)).statusCode, 404);
+      assert.equal((await f.call("POST", "/v1/swipes", token, {targetUserId:demoIds.A,action:"like"}, live)).statusCode, 404);
+      // mode-only provenance is also excluded; real users without demo markers remain visible.
+      const marked = randomUUID();
+      await live.firestore.ref("users", marked).set({id:marked,accountStatus:"active",mode:"demo",createdAt:new Date().toISOString()});
+      assert.equal((await f.call("POST", "/v1/swipes", token, {targetUserId:marked,action:"like"}, live)).statusCode, 404);
+      assert.equal((await f.call("GET", `/v1/profiles/${marked}`, token, undefined, live)).statusCode, 404);
+      const realTarget = randomUUID(), realMedia = randomUUID();
+      await live.firestore.ref("users", realTarget).set({id:realTarget,accountStatus:"active",createdAt:new Date().toISOString()});
+      await live.firestore.ref("profiles", realTarget).set({...seedProfile,userId:realTarget,mediaIds:[realMedia]});
+      await live.firestore.ref("media", realMedia).set({id:realMedia,userId:realTarget,scope:"profile",kind:"image",position:0});
+      assert.equal((await f.call("GET", `/v1/profiles/${realTarget}`, token, undefined, live)).statusCode, 200);
+      assert.deepEqual((await f.call("GET", "/v1/discovery", token, undefined, live)).json().data.map((profile: any) => profile.userId), [realTarget]);
+      assert.equal((await f.call("GET", "/v1/chat/catalog", token, undefined, live)).statusCode, 503);
+      assert.equal((await f.call("POST", `/v1/matches/${randomUUID()}/messages`, token, {clientMessageId:randomUUID(),kind:"gif",payload:{catalogId:"coffee"}}, live)).statusCode, 503);
+      assert.equal((await f.call("GET", "/v1/me/verification", token, undefined, live)).statusCode, 503);
+    } finally { await live.close(); }
+  } finally { await f.close(); }
+});
+
+test("new matches notify both authenticated members across API instances, never a third user", options, async () => {
+  const f = await fixture();
+  const sockets: Socket[] = [];
+  try {
+    const [a,b,c] = await Promise.all([f.login("A"),f.login("B"),f.login("C")]);
+    const second = await f.second();
+    const sa = await connect(f.app,a.token), sb = await connect(second,b.token);
+    sockets.push(sa,sb);
+    // connect() binds the server once; C shares A's already listening endpoint.
+    const address = f.app.server.address() as {port:number};
+    const sc = io(`http://127.0.0.1:${address.port}`, {auth:{token:c.token},transports:["websocket"],reconnection:false});
+    sockets.push(sc);
+    await new Promise<void>((resolve,reject) => {sc.once("connect",resolve);sc.once("connect_error",reject);});
+    const foreign: unknown[] = [];
+    sc.on("match:created", value => foreign.push(value));
+    const ea = event(sa,"match:created"), eb = event(sb,"match:created");
+    const id = await match(f,a.token,b.token);
+    assert.deepEqual(await ea,{matchId:id});
+    assert.deepEqual(await eb,{matchId:id});
+    await pause(150);
+    assert.deepEqual(foreign,[]);
+  } finally {for (const socket of sockets) socket.disconnect();await f.close();}
+});
+
+test("concurrent socket subscriptions cannot exceed the 50-match limit", options, async () => {
+  const f = await fixture();
+  let socket: Socket | undefined;
+  try {
+    const a = await f.login("A");
+    const batch = f.app.firestore.db.batch();
+    const ids = Array.from({ length: 51 }, () => randomUUID());
+    for (const id of ids) {
+      const other = randomUUID();
+      batch.create(f.app.firestore.ref("users", other), {
+        id: other, accountStatus: "active", createdAt: new Date().toISOString(),
+      });
+      batch.create(f.app.firestore.ref("matches", id), {
+        id, memberIds: [demoIds.A, other], status: "active", createdAt: new Date().toISOString(),
+      });
+    }
+    await batch.commit();
+    socket = await connect(f.app, a.token);
+    const results = await Promise.all(ids.map(id => subscribe(socket!, id)));
+    assert.equal(results.filter(result => result.ok).length, 50);
+    assert.equal(results.filter(result => result.error?.code === "SUBSCRIPTION_LIMIT").length, 1);
+    const serverSocket = [...f.app.firestore.io.sockets.sockets.values()][0];
+    assert.equal([...serverSocket.rooms].filter(room => room.startsWith("match:")).length, 50);
+  } finally {
+    socket?.disconnect();
+    await f.close();
+  }
+});

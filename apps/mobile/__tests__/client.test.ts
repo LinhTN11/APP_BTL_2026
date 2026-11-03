@@ -2,6 +2,7 @@ import {
   Api,
   ApiError,
   loadAllMessages,
+  loadAllPages,
   normalizeBaseUrl,
   type Message,
 } from '../src/api';
@@ -204,4 +205,50 @@ test('ended match drops pending retries and rejects late retry completions', () 
   expect(
     chatReducer(state, { type: 'session', sessionKey: 'B' }).pending,
   ).toEqual({});
+});
+
+test.each(['/v1/matches', '/v1/blocks'])(
+  'complete %s membership includes the second page and stops repeated cursors',
+  async path => {
+    fetchMock
+      .mockResolvedValueOnce(
+        response({
+          data: Array.from({ length: 50 }, (_, i) => ({ id: `first-${i}` })),
+          meta: { nextCursor: 'next page' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          data: [{ id: 'beyond-first-page' }],
+          meta: { nextCursor: null },
+        }),
+      );
+    const records = await loadAllPages<{ id: string }>(
+      new Api('http://localhost'),
+      path,
+    );
+    expect(records).toHaveLength(51);
+    expect(records.some(item => item.id === 'beyond-first-page')).toBe(true);
+    expect(fetchMock.mock.calls[1][0]).toContain(
+      `${path}?limit=50&cursor=next%20page`,
+    );
+    fetchMock.mockResolvedValue(
+      response({ data: [], meta: { nextCursor: 'same' } }),
+    );
+    await expect(
+      loadAllPages(new Api('http://localhost'), path),
+    ).rejects.toThrow('Cursor');
+  },
+);
+
+
+test('release endpoint validation rejects cleartext and accepts explicit HTTPS', () => {
+  const previous = __DEV__;
+  try {
+    Object.defineProperty(globalThis, '__DEV__', { value: false, configurable: true });
+    expect(() => normalizeBaseUrl('http://10.0.2.2:3000')).toThrow('HTTPS');
+    expect(normalizeBaseUrl('https://api.example.com/')).toBe('https://api.example.com');
+  } finally {
+    Object.defineProperty(globalThis, '__DEV__', { value: previous, configurable: true });
+  }
 });

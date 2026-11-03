@@ -1,6 +1,6 @@
 # Tài khoản demo local
 
-Chỉ bật khi `DEMO_MODE=true`. Tất cả tài khoản hư cấu; PNG hình học được mã nguồn tạo, không dùng ảnh người thật.
+Chỉ dùng trong lane **Firestore emulator được chọn rõ** với `DEMO_MODE=true`. Cloud từ chối demo/seed. Fixture cloud lịch sử đã được dọn theo D20; bảng dưới là contract kiểm thử emulator, không phải tài khoản đăng nhập app thật. PNG hình học được mã nguồn tạo, không dùng ảnh người thật.
 
 | Account | ID | Đặc điểm |
 |---|---|---|

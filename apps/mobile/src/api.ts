@@ -44,12 +44,20 @@ export interface Preferences {
   maxAge: number;
   radiusKm: number;
 }
+export interface OwnLocationStatus {
+  hasLocation: boolean;
+  updatedAt: string | null;
+}
+export type ProfileRequirement = 'displayName' | 'dateOfBirth' | 'bio' | 'media';
 export interface Envelope<T> {
   data: T;
   meta?: {
     nextCursor: string | null;
     radiusAvailable?: boolean;
     reason?: string;
+    emptyReason?: string;
+    ownProfileComplete?: boolean;
+    missingRequirements?: ProfileRequirement[];
   };
 }
 export class ApiError extends Error {
@@ -76,6 +84,9 @@ export function normalizeBaseUrl(value: string): string {
     throw new Error(
       'URL cần là http(s)://máy-chủ:cổng, không kèm đường dẫn hoặc thông tin đăng nhập.',
     );
+  }
+  if (!__DEV__ && parsed.protocol !== 'https:') {
+    throw new Error('Bản phát hành yêu cầu URL API HTTPS được cấu hình rõ ràng.');
   }
   return parsed.origin;
 }
@@ -153,6 +164,29 @@ export class Api {
     };
   }
 }
+/** Load complete membership lists before treating an absent item as revoked. */
+export async function loadAllPages<T>(api: Api, path: string): Promise<T[]> {
+  const values: T[] = [];
+  const seen = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const page: Envelope<T[]> = await api.request(
+      `${path}${path.includes('?') ? '&' : '?'}limit=50${
+        cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''
+      }`,
+    );
+    values.push(...page.data);
+    cursor = page.meta?.nextCursor ?? null;
+    if (cursor && seen.has(cursor)) {
+      throw new Error('Cursor danh sách lặp; hãy thử tải lại.');
+    }
+    if (cursor) {
+      seen.add(cursor);
+    }
+  } while (cursor);
+  return values;
+}
+
 export async function loadAllMessages(
   api: Api,
   matchId: string,

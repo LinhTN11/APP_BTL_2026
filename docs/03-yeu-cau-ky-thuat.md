@@ -1,13 +1,15 @@
 # Yêu cầu kỹ thuật và quyết định stack
 
-Ngày cập nhật: 01/11/2026, Asia/Saigon. Trạng thái: yêu cầu người dùng đã xác nhận; React Native Community CLI đã chốt theo D10, core P01–P05 đang triển khai theo D11. D12 (USER) chọn Cloud Firestore làm DB chính, chưa có project/credentials. Core đang port; SQL core và extensions là reference local, chưa phải cloud implementation.
+D20 (02/11/2026): bản chạy cloud chỉ dữ liệu thật, demo/seed bị chặn; fixture và provider giả chỉ dùng explicit emulator test. Seed/QA cloud lịch sử đã được dọn theo quyền USER, giữ Firebase users thật. [Kết quả hiện tại](qa/production-real-data-2026-11-02.md); các bảng demo/provider phía dưới là thiết kế theo phase, không được bật giả lập ở runtime cloud.
+
+Ngày cập nhật: 02/11/2026, Asia/Saigon. Trạng thái: yêu cầu người dùng đã xác nhận; React Native Community CLI đã chốt theo D10, phạm vi core P01–P05 được cho phép theo D11/D13. D12 chọn Cloud Firestore làm DB chính; project `app-cuoi-ky-2d653` và credential BE local đã được cấu hình. Read-only check, create-only seed và bounded HTTP cloud smoke A/B/C đã đạt; xem [evidence cloud setup](qa/cloud-setup-2026-11-02.md) cho scope smoke và giới hạn còn lại.
 
 ## 1. Ràng buộc bắt buộc
 
 - Mobile phải dùng **React Native Community CLI**, không Expo/Expo Go/module `expo-*`; Android là thiết bị demo chính.
-- Nhóm có **1 BE và 1 FE**. BE cần hoàn thành trong hôm nay; FE có một ngày làm riêng để tích hợp và sửa lỗi.
+- Nhóm có **1 BE và 1 FE**. Timebox demo BE ngày 01/11/2026 là lịch sử; FE có một ngày làm riêng. Công việc full BE tiếp theo theo [backlog hiện tại](backend/requirements.md), chưa có deadline mới được chốt.
 - Dùng dịch vụ miễn phí thật khi khả thi; dịch vụ bắt trả phí dùng mô phỏng có nhãn. Không coi free trial yêu cầu thẻ hoặc quota tạm thời là miễn phí bền vững.
-- FE clone app, cài dependencies và cấu hình API URL tới BE dùng chung; không cần Admin key. BE cần tạo Firebase project riêng một lần và mỗi người chạy backend có credential được cấp quyền. Xem [setup Firestore](12-ket-noi-firestore.md).
+- D24 (03/11/2026): FE clone và tự chạy BE local, nhận file cấu hình/credential test qua kênh riêng, dùng đúng cloud project + namespace hiện có của team. `team:export` / `team:setup` xử lý đường dẫn local; không tạo project/DB riêng cho mỗi FE. Secret chỉ ở BE, không trong mobile/Git. Xem [bàn giao](handoff/be-to-fe.md).
 - Code TypeScript dễ đọc, module nhỏ, tên nghiệp vụ rõ. Không microservice, Kubernetes, message broker hoặc kiến trúc nhiều lớp không cần thiết cho demo.
 - Toàn bộ 37 chức năng phải có nơi trong roadmap; phạm vi một ngày được chốt riêng ở [kế hoạch một ngày](11-ke-hoach-mot-ngay.md), không đồng nghĩa hoàn thành hết roadmap.
 - Giao diện Apple Liquid Glass là định hướng thiết kế trên Android. Kính native iOS chỉ là phần tăng cường khi thiết bị hỗ trợ; không là điều kiện để demo Android.
@@ -33,32 +35,31 @@ Không dùng Expo Go, Expo Router, Expo SDK, QR launch hoặc thư viện `expo-
 | UI | RN components + GlassSurface của dự án; React Navigation native-stack khi cần | Android baseline dùng nền đặc/bán mờ, viền và tương phản; blur/native glass chỉ thêm sau kiểm build/thiết bị, không dùng module Expo |
 | Test API | Node test runner hoặc Vitest, chọn một ở P01 | Test transaction, auth, phân quyền, retry; Postman CLI dùng contract/smoke tùy chọn |
 
-Cấu hình BE: `DATABASE_MODE=firestore`, bắt buộc `FIREBASE_PROJECT_ID`; credential dùng ADC hoặc `GOOGLE_APPLICATION_CREDENTIALS` trỏ file local tuyệt đối, không commit/đưa vào bundle/log/chat. `FIRESTORE_NAMESPACE` mặc định `app-cuoi-ky` (`[a-z0-9-]{1,48}`). Cloud không đặt `FIRESTORE_EMULATOR_HOST`; emulator chỉ khi chọn `DATABASE_MODE=firestore-emulator`. Rules client deny all; Admin SDK bỏ qua rules nên mọi quyền session/owner/match/block phải được API kiểm tra. Chưa có project/credentials nên kết nối thật còn pending; [12](12-ket-noi-firestore.md) là runbook setup.
+Cấu hình BE: `DATABASE_MODE=firestore`, bắt buộc `FIREBASE_PROJECT_ID`; credential dùng ADC hoặc `GOOGLE_APPLICATION_CREDENTIALS` trỏ file local tuyệt đối, không commit/đưa vào bundle/log/chat. `FIRESTORE_NAMESPACE` mặc định `app-cuoi-ky` (`[a-z0-9-]{1,48}`). Cloud không đặt `FIRESTORE_EMULATOR_HOST`; emulator chỉ khi chọn `DATABASE_MODE=firestore-emulator`. Rules client deny all; Admin SDK bỏ qua rules nên mọi quyền session/owner/match/block phải được API kiểm tra. Project/credential đã cấu hình; bounded HTTP smoke đã chứng minh một số API invariants trên cloud. Xem [12](12-ket-noi-firestore.md) và [evidence](qa/cloud-setup-2026-11-02.md) để biết phạm vi.
 
 ## 4. Cấu trúc mục tiêu đang triển khai
 
 ```text
-apps/
-  api/src/{app.ts,server.ts,config.ts}
-  api/src/firestore/{app,context,auth,profiles,media,seed,matching,chat,safety}.ts
-  api/src/db/                       # SQL cũ: reference local, không DB chính
-  api/src/modules/{auth,profiles,media,discovery,matches,chat,safety,...}/
-  api/src/providers/{demo,google,music,ai,payments,...}/
-  api/test/
-  mobile/{android,ios}/              # native projects Community CLI
-  mobile/{App.tsx,index.js,metro.config.js}
-  mobile/src/{api,components,features,navigation,theme}/
-packages/contracts/src/             # DTO và schema chia sẻ
-scripts/                            # setup, doctor, dev, Firestore check/seed/emulator test
-assets/demo/                        # ảnh/dữ liệu giả lập có quyền sử dụng
-data/                               # media/upload local; không commit
-docs/                               # nguồn yêu cầu, kế hoạch, contract, evidence
-.agents/skills/                     # skill cục bộ đi cùng repo
+apps/api/src/
+  server.ts                         # Listen; chỉ Firestore
+  shared.ts, schemas.ts             # Errors/hash/id, JSON validation
+  firestore/{app,context,auth,profiles,media,seed,matching,chat,safety}.ts
+apps/api/test/firestore-*.test.ts    # Core integration + quyền/race trên emulator
+apps/mobile/
+  android/, ios/, App.tsx
+  src/{api,session,chat,location,ui}.ts(x)
+  src/screens/{Login,MyProfile,Discover,Chat,Safety}.tsx
+  __tests__/
+packages/contracts/src/index.ts      # DTO chung
+scripts/                            # setup, BE/FE/demo, doctor, Firestore test
+secrets/, .env.local, data/          # Local, không commit
+.local/                             # Notes/API SQL/skill cũ, không commit
+docs/{api,qa,handoff,prototype,source}/
 ```
 
 ## 5. Định nghĩa “clone là chạy”
 
-Điều kiện: Git, Node/npm đã khóa, internet cho lần `npm ci`/Gradle đầu, JDK 21, Android Studio/SDK Command-line Tools, Platform Tools (`adb`), platform/build tools tương thích RN đã khóa. `ANDROID_HOME` trỏ SDK; SDK licenses đã chấp nhận. Có emulator đã bật hoặc máy Android bật USB debugging, đã xác nhận khóa RSA. Backend cloud cần project ID + ADC/credential riêng; FE chỉ cần API URL tới backend đã cấu hình.
+Điều kiện: Git, Node/npm đã khóa, internet cho lần `npm ci`/Gradle đầu, JDK 21, Android Studio/SDK Command-line Tools, Platform Tools (`adb`), platform/build tools tương thích RN đã khóa. `ANDROID_HOME` trỏ SDK; SDK licenses đã chấp nhận. Có emulator đã bật hoặc máy Android bật USB debugging, đã xác nhận khóa RSA. Mặc định team dùng `team:setup` để cài đúng project ID/namespace/credential cloud chung trên mỗi máy chạy BE; app gọi API local. Nếu chọn dùng một BE đang chạy chung thì FE chỉ cần URL API, không cần cài credential.
 
 ```powershell
 npm ci
@@ -79,7 +80,7 @@ npm run demo
 
 | Khả năng | Hướng thực hiện | Điều kiện/giới hạn |
 |---|---|---|
-| Profile, discovery, match, chat, block/report | Firestore Admin SDK đang port; cloud chưa kiểm chứng | Hai client dùng chung một backend để thấy nhau; seed không thay thế kiểm thử hai chiều |
+| Profile, discovery, match, chat, block/report | Firestore Admin SDK; cloud check/seed và bounded HTTP A/B/C smoke pass | HTTP smoke có giới hạn; native cloud đã kiểm process restart/socket trên một emulator, chưa hai Android client hoặc FE-product |
 | GPS, camera/gallery, chia sẻ qua share sheet | API thiết bị thật | Xin quyền tại lúc dùng; từ chối quyền vẫn dùng app; không tự gửi cho người khác |
 | Vân tay/Face ID | `react-native-keychain` + kiểm soát truy cập sinh trắc OS khi tương thích | Thiết bị hỗ trợ; không là đăng nhập lần đầu; cần native build và cấu hình iOS/Android riêng, session server vẫn có expiry/revoke |
 | Quiz tính cách, mood, keyword, icebreaker | Logic local/server thật | Không tự gọi quiz tự soạn là MBTI chuẩn hóa; keyword rule không gọi là AI |

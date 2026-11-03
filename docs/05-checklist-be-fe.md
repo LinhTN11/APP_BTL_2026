@@ -1,8 +1,14 @@
 # Checklist riêng cho backend, UI kiểm thử và frontend sản phẩm
 
-Trạng thái kiểm chứng mới nhất nằm ở [báo cáo core Firestore](qa/final-report.md). Core đã chạy trên Emulator; cloud project chưa có. Các checkbox nghiệm thu toàn bộ chức năng vẫn mở khi còn provider/thiết bị/phạm vi chưa đáp ứng; không suy ra toàn bộ việc chưa được triển khai chỉ từ checkbox trống.
+> 03/11/2026: trạng thái từng Fxx/code/gap xem [ma trận BE](backend/requirements.md); quy trình đọc/coding xem [BE guide](backend/README.md). Checklist dưới đây giữ acceptance đầy đủ và evidence lịch sử. Các phần auth/fixture trước D17/D20 không hướng dẫn bật demo ở cloud; auth hiện hành là Firebase SDK. Secret guard có evidence riêng trong [QA tài liệu/bảo vệ Git](qa/backend-docs-security-2026-11-03.md), không đóng thay bất kỳ Fxx nghiệp vụ nào.
 
-Trạng thái 01/11/2026: D12 (USER) chọn Firestore; core P01–P05 đang port, SQL cũ là reference. Chưa có project/credentials, cloud read/write chưa kiểm chứng; P06–P10 cần port riêng. [Setup cloud](12-ket-noi-firestore.md); React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
+Cập nhật nhắn tin 03/11/2026 (F09/F10, T04.01–02, T03.03/T04.03): các lỗi history/GPS/retry/revocation/stale membership và race subscription đã có regression; mobile 111/111, API emulator 27/27, typecheck đạt, lint không lỗi. Giữ checklist nghiệm thu đầy đủ mở vì GIF/sticker thật, bản đồ và kiểm thử native hai thiết bị chưa đạt. [Đối chiếu và evidence](qa/chat-audit-2026-11-03.md).
+
+Trạng thái kiểm chứng mới nhất nằm ở [báo cáo core Firestore](qa/final-report.md) và [cloud setup evidence](qa/cloud-setup-2026-11-02.md). Core đã chạy trên Emulator; cloud check/seed và bounded HTTP A/B/C smoke đạt. Các checkbox nghiệm thu toàn bộ chức năng vẫn mở khi còn provider/thiết bị/phạm vi chưa đáp ứng; không suy ra toàn bộ việc chưa được triển khai chỉ từ checkbox trống.
+
+Trạng thái 02/11/2026: D12 chọn Firestore; core P01–P05 có emulator evidence. Theo D13, project/credential đã cấu hình; cloud read-only check, create-only seed và bounded A/B/C HTTP smoke đạt. SQL cũ đã gỡ khỏi source active; P06–P10 cần triển khai Firestore riêng. [Setup cloud](12-ket-noi-firestore.md); React Native Community CLI, không Expo (D10). Checkbox chỉ tick theo evidence; FE-product chưa được duyệt visual.
+
+Cập nhật D15: các màn sản phẩm đã chuyển sang Google auth/onboarding và core API thật; fixture/OTP/selfie/GIF mô phỏng đã gỡ khỏi giao diện. Google code có kiểm crypto và emulator nhưng OAuth client còn chờ xác nhận, chưa có real-account proof. Nhận diện Mầm là đề xuất chưa duyệt. [QA D15](qa/product-ui-2026-11-02.md) là nơi ghi kiểm chứng mới; các checklist dưới giữ yêu cầu đầy đủ và evidence lịch sử.
 
 **Ngày:** 01/11/2026. **Trạng thái ban đầu:** toàn bộ implementation chưa bắt đầu; tài liệu/prototype không được dùng để đánh dấu backend hoặc màn RN đã hoàn thành.
 
@@ -23,7 +29,7 @@ Một F có thể BE xong nhưng FE chưa xong, hoặc demo xong nhưng provider
 
 **Mã trạng thái khi cập nhật:** `chưa bắt đầu`, `đang làm`, `chờ cấu hình`, `chờ review`, `implemented-demo`, `integrated-device`, `integrated-sandbox`, `integrated-real`, `đã kiểm chứng`. Mỗi phần được tick phải ghi mode và link evidence ở cuối dòng hoặc bảng báo cáo QA.
 
-**Quy tắc dịch vụ:** miễn phí làm thật khi có khả năng/cấu hình; trả phí mô phỏng. FE chỉ cần API URL; BE setup Firebase project riêng một lần và credential riêng được cấp quyền, không commit key. Cloud thiếu cấu hình phải báo lỗi; emulator phải chọn rõ và không tính là cloud pass. Cần credential miễn phí mà chưa có phải ghi `chờ cấu hình`, không đổi tên fixture thành tích hợp thật. Media picker/camera/GPS/biometric/native calendar có thể làm thật trên Android hỗ trợ mà không cần cloud key.
+**Quy tắc dịch vụ:** miễn phí làm thật khi có khả năng/cấu hình; trả phí mô phỏng. D24: FE clone/chạy BE local, nhận file cấu hình/credential test riêng qua kênh team và dùng đúng project/namespace cloud chung; không tạo DB riêng hoặc commit key. Cloud thiếu cấu hình phải báo lỗi; emulator phải chọn rõ và không tính là cloud pass. Cần credential miễn phí mà chưa có phải ghi `chờ cấu hình`, không đổi tên fixture thành tích hợp thật. Media picker/camera/GPS/biometric/native calendar có thể làm thật trên Android hỗ trợ mà không cần cloud key.
 
 ## 2. Checklist BE — nền tảng trước chức năng
 
@@ -182,3 +188,56 @@ Giới hạn: ghi cụ thể nếu còn phần chưa đáp ứng
 ```
 
 Không tick checkbox theo lời agent báo “done” khi chưa xem diff và kiểm tra đầu ra. Có thể tick BE trước FE, nhưng báo cáo tổng phải giữ cả hai trạng thái.
+
+
+## 8. Lượt cleanup D14 — bằng chứng riêng, không đóng cả 37F
+
+T01.01/T01.03/T02.01/T02.02/T05.01, owner Integrator + BE + FE-test: source SQL/test cũ đã gỡ; khởi động BE/FE riêng; auth UI-test và PATCH lifestyle được sửa. `npm run verify` đã đạt (startup2, Firestore16, mobile23 trước bản sửa hủy hồ sơ cuối; mobile25/typecheck/lint đạt sau sửa cuối). Kết quả sau sửa cuối và kiểm native nằm tại [QA hiện tại](qa/final-report.md). Các checkbox nghiệm thu toàn feature ở trên vẫn mở khi còn provider/thiết bị/visual chưa đáp ứng.
+
+## 9. Lượt D15 — trạng thái riêng, chưa đóng toàn bộ feature
+
+| Hạng mục | Trạng thái / evidence |
+|---|---|
+| T02.01/F01 Google | BE xác minh ID token/chữ ký/audience/issuer/expiry/nonce; challenge dùng một lần, identity theo provider/sub, không link qua email; Android Credential Manager + client helper đã có. API typecheck và emulator 18/18 đạt ở lượt review auth. Chờ OAuth Web/Android client và tài khoản thật; [setup](google-sign-in.md). |
+| T05.01 core UI | App dùng Google/onboarding/profile/media/discovery/matches/text+location chat/safety API; đã bỏ màn demo, fixture chooser/công cụ BE/OTP/selfie/GIF giả lập. Kiểm mobile/native và giới hạn cập nhật ở [QA D15](qa/product-ui-2026-11-02.md), không suy ra từ lời worker. |
+| T00.02 nhận diện | Mascot Mầm/nền vườn và palette san hô/mận/kem; nội dung giấy đặc, kính chỉ header/tab/composer. Nền biển/nút dừng/code liên quan đã gỡ. [Brand đề xuất](design/brand-2026-11-02.md), [preview](prototype/index.html); chưa duyệt visual. |
+| Dữ liệu/quyền | Không reset/seed/xóa cloud, không tạo OAuth client/IAM hay deploy. Endpoint demo BE giữ cho test; evidence cloud cũ không là bằng chứng Google live hoặc UI mới. |
+
+Chưa tick FE-CORE/F01 toàn phần: còn Google provider thật, hai Android client, accessibility/thiết bị đầy đủ, iOS và visual approval. Không coi lệnh `demo` giữ tên cũ là màn demo trong sản phẩm.
+
+## D16/D17 — Phản hồi nhận diện và Firebase SDK
+
+Người dùng xác nhận nền là họa tiết trừu tượng thương hiệu có thể chuyển động, yêu cầu font cá tính/mascot đan layer/bong bóng thoại/nhiều cử chỉ/chuyển cảnh sau login; chưa duyệt visual cuối. D17 yêu cầu Firebase Auth SDK và cho phép đăng ký Web+Android app/SHA-1; đã cấu hình client/provider, không tạoAdmin key/IAM/gói trả phí. [SDK contract/evidence](firebase-auth.md). Các test cuối/ảnh native ghi riêng ở [QA](qa/product-ui-2026-11-02.md); chưa tickGoogle real-account hoặc toàn bộ FE-product.
+
+## D20 — Runtime và data thật
+
+- [x] Cloud chặn demo/seed, fixture token/target bị từ chối; startup/API regression có evidence.
+- [x] Bỏ nhãn phụ Google; refresh dữ liệu thật/empty-error/retry và match mới được kiểm tự động.
+- [x] Snapshot local + cleanup 83 document/8 ảnh giả, giữ 15 document/hai Firebase users; restore/precondition/mixed-data tests emulator đạt.
+- [x] Build/install debug trên Android USB thật; live Firebase login và đọc profile/preferences/matches/discovery trả 200.
+- [ ] Hai Android client thật cùng test mutual match/chat/reconnect/block, quyền thiết bị/accessibility đầy đủ sau D20.
+- [ ] Release HTTPS/signing, storage/backup vận hành, retention và iOS; chưa nhận production Internet hoàn chỉnh.
+
+[Evidence và giới hạn](qa/production-real-data-2026-11-02.md). Không đóng F01–F37/FE-product từ core smoke.
+
+## D21 — Khám phá, GPS, giao diện
+
+- [x] Chẩn đoán cloud read-only: hai hồ sơ thiếu bio, một thiếu ảnh; UI hướng dẫn hoàn thiện, có đường từ khám phá về Tôi. Regression API về điều kiện xuất hiện/quyền riêng tư pass, không tự sửa hồ sơ thật.
+- [x] GPS theo quyền fine/coarse, fallback timeout, lỗi actionable và nút mở cài đặt. 11 tests GPS pass; điện thoại đang tắt Vị trí dù đã cấp quyền.
+- [x] Tôi → Giao diện: Theo thiết bị/Sáng/Tối, lưu local tách session, áp dụng app/status bar; test restore/system change/storage failure pass.
+- [x] Typecheck workspace pass; lint 0 error/2 warning cũ; API emulator 24/24, mobile 83/83; Android debug build/install/launch và Metro bundle HTTP 200.
+- [ ] Lấy GPS thật sau khi bật Vị trí trên điện thoại; iOS native và visual/accessibility đầy đủ chưa kiểm.
+
+[Evidence/giới hạn D21](qa/discovery-gps-theme-2026-11-02.md). Chưa duyệt visual tổng thể.
+
+## D22 — Khám phá theo vị trí/bán kính
+
+- [x] GET trạng thái vị trí owner-only, không trả tọa độ; auth/privacy/consent lifecycle và timestamp malformed regression pass.
+- [x] Khám phá hiển thị radius và timestamp server, GPS preview/cancel/consent/refresh; giữ nháp filter/profile; guard callback sau unmount.
+- [x] Near/far regression giữ radius/safety, cursor không bị coi là hết kết quả; lỗi status không cho ghi defaults, lỗi deck không hiện metadata cũ.
+- [x] API emulator26/26 trước fix cuối + targeted owner-status1/1 sau fix; mobile103/103; workspace typecheck pass; lint0error/2warning cũ; Android build/install/launch và native status GET/render pass.
+- [x] Review độc lập BE và final FE/integration;4finding được sửa và re-review approved.
+- [x] GPS Android thật đến bước preview tọa độ và Hủy; không tự lưu vị trí cloud.
+- [ ] Hai tài khoản thật tự cập nhật/đồng ý lưu GPS đúng rồi refresh để chứng minh gần nhau trong radius sẽ thấy nhau. Agent không sửa dữ liệu thật để ép kết quả.
+
+[QA D22 và giới hạn](qa/discovery-radius-2026-11-02.md).

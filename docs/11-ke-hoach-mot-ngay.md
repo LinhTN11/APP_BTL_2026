@@ -1,12 +1,14 @@
 # Kế hoạch thực tế: một ngày BE, một ngày FE riêng
 
+> Snapshot kế hoạch ngày 01/11/2026, giữ để truy vết timebox; không là hướng dẫn runtime hiện tại. Từ D17/D20 product dùng Firebase SDK và dữ liệu thật; các chỉ dẫn demo-session/OTP/seed cloud bên dưới đã bị thay thế. Xem [BE guide](backend/README.md), [backlog full BE](backend/requirements.md) và [runbook](09-chay-demo-va-ban-giao.md) khi làm việc ngày 03/11 trở đi. Chưa có deadline mới cho full 37F.
+
 Ngày BE: **01/11/2026, Asia/Saigon** theo yêu cầu người dùng. Ngày FE chưa được cung cấp; không tự giả định ngày 02/11. H0 là thời điểm bắt đầu implementation, không là cam kết còn đủ 8–10 giờ hôm nay. Đây là ước lượng cần điều chỉnh theo số giờ còn lại và tiêu chí chấm.
 
-D12 chọn Cloud Firestore; chưa có project/credentials nên cloud read/write pending; port core/emulator tiếp tục, SQL extensions P06–P10 là reference chưa cloud. [Setup Firestore](12-ket-noi-firestore.md). D10 khóa React Native Community CLI, không Expo. D11 cho phép core P01–P05 và UI-test BE; FE-product vẫn chờ duyệt visual. Android native toolchain/build là phần đường găng P01, không tính như mở QR.
+D12 chọn Cloud Firestore. Theo D13 project/credential đã cấu hình; read-only check, create-only seed và bounded HTTP cloud A/B/C smoke pass. P06–P10 chưa triển khai Firestore; source SQL cũ đã gỡ. [Setup Firestore](12-ket-noi-firestore.md). D10 khóa React Native Community CLI, không Expo. D11/D13 cho phép core P01–P05 và UI-test BE; FE-product vẫn chờ duyệt visual. Android native toolchain/build là phần đường găng P01, không tính như mở QR. Xem [cloud evidence](qa/cloud-setup-2026-11-02.md) để biết gate còn mở.
 
 ## 1. Kết quả cần ưu tiên
 
-**Phạm vi đã cho phép, cần kiểm chứng:** backend Firestore thật (đang port, chưa kiểm cloud) cho profile → discovery → like/match → chat → unmatch/block, seed/persistence, contract và màn React Native tối thiểu để bấm test. Auth có demo session minh bạch; OTP/SMS trả phí mô phỏng. Upload ảnh, GPS và các API thiết bị miễn phí được làm thật trong phạm vi đủ thời gian. Provider ngoài DB cần tài khoản/config giữ trạng thái unavailable khi thiếu. Firestore là DB chính theo D12: cloud roundtrip chờ project/credentials, không gọi emulator là cloud để đóng core.
+**Phạm vi đã cho phép, cần kiểm chứng:** backend Firestore thật cho profile → discovery → like/match → chat → unmatch/block, seed/persistence, contract và màn React Native tối thiểu để bấm test. Bounded HTTP smoke trên cloud đã xác minh A/B/C API flow; vẫn cần process-level restart, thiết bị, Socket.IO và UI checks. Auth có demo session minh bạch; OTP/SMS trả phí mô phỏng. Upload ảnh, GPS và các API thiết bị miễn phí được làm thật trong phạm vi đủ thời gian. Provider ngoài DB cần tài khoản/config giữ trạng thái unavailable khi thiếu. Emulator không gọi là cloud.
 
 Toàn bộ 37 chức năng vẫn trong [roadmap 12 phase](04-ke-hoach-trien-khai.md). **Hoàn thành core một ngày không phải hoàn thành cả tài liệu Word.** Nếu tiêu chí chấm bắt buộc đủ ba phần, cần chốt lại phạm vi mô phỏng/nhân lực/thời gian trước khi cam kết.
 
@@ -67,7 +69,7 @@ Inventory 60 màn/sheet là yêu cầu phủ cho roadmap. Một ngày FE ưu ti�
 - [ ] QA: A/B/C quyền, concurrent like, retry send, restart, clone sạch, tắt API/retry.
 - [ ] FE nhận: thiết bị, RN/CLI/React theo lockfile, JDK/SDK, cách build/install, ADB reverse 3000/8081, API URL, test accounts, known issues, API freeze.
 - [ ] FE-product: prototype đã được chủ dự án chốt; core screens và state coverage đã kiểm.
-- [ ] Cloud: project/credential riêng đã setup, health mode cloud, read/write/restart và hai client trên cùng API có evidence; hiện pending.
+- [ ] Cloud: project/credential, read-only check, create-only seed, bounded HTTP A/B/C smoke và root marker đã được xác nhận; còn kiểm restart qua process riêng, hai thiết bị, Socket.IO cloud và handoff evidence. Giữ checkbox mở tới khi các phần còn lại được review.
 - [ ] Mọi tính năng ngoài core ghi trạng thái riêng: chưa làm/demo/real/blocked-config; không đánh đồng.
 
 ## 7. Thông tin còn cần bổ sung theo lúc thực hiện

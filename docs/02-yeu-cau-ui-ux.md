@@ -1,5 +1,11 @@
 # Yêu cầu UI/UX — app hẹn hò React Native
 
+> D21 USER, 02/11/2026: Tôi có chọn giao diện Theo thiết bị / Sáng / Tối (lưu trên máy, mặc định theo thiết bị); hiển thị hướng dẫn hoàn thiện hồ sơ để xuất hiện trong Khám phá, và đường mở cài đặt vị trí khi GPS lỗi. [QA/giới hạn](qa/discovery-gps-theme-2026-11-02.md). Không đồng nghĩa duyệt visual tổng thể.
+
+> D16 USER: nền đã chốt là pattern trừu tượng có chuyển động, không là vườn/phố/plaza. V1 chưa đạt; đổi font có cá tính, mascot đan layer chữ/bố cục và nhiều cử chỉ, lời trong bong bóng chat, cảnh nền có chiều sâu và chuyển cảnh mượt sau đăng nhập. Xem brand guide/preview V2; chưa duyệt visual.
+
+> D15 USER,02/11/2026: thay màn demo bằng luồng core API thật, Google Sign-In; bỏ nền biển/nút dừng. Giữ Liquid Glass ở thanh điều hướng/header/composer, dùng mặt đặc cho nội dung/control. Bộ nhận diện Gặp/Mầm đang là [đề xuất có preview](design/brand-2026-11-02.md), chưa duyệt visual; bảng màn bên dưới giữ phạm vi/backlog gốc.
+
 Ngày lập: 01/11/2026. Trạng thái: **ĐỀ XUẤT ĐỂ DUYỆT**, chưa chốt thiết kế. Tài liệu nguồn: [bản gốc](source/yeu-cau-goc.md). Các mã Pxxx bên dưới trỏ về đoạn nguồn; không đánh đồng đề xuất thiết kế với yêu cầu đã xác nhận.
 
 ## 1. Mục tiêu và phạm vi bàn giao

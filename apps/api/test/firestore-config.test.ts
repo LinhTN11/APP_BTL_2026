@@ -8,6 +8,8 @@ import { createFirestoreContext } from "../src/firestore/context.js";
 
 const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
 const trackedEnvironment = [
+  "DEMO_MODE",
+  "FIRESTORE_SEED_DEMO",
   "DATABASE_MODE",
   "FIRESTORE_EMULATOR_HOST",
   "FIREBASE_PROJECT_ID",
@@ -16,7 +18,7 @@ const trackedEnvironment = [
 ] as const;
 
 async function withEnvironment(
-  values: Record<(typeof trackedEnvironment)[number], string | undefined>,
+  values: Partial<Record<(typeof trackedEnvironment)[number], string | undefined>>,
   run: () => Promise<void>
 ) {
   const previous = Object.fromEntries(
@@ -180,3 +182,15 @@ test(
     );
   }
 );
+
+
+test("production rejects demo, seed and emulator before Admin initialization", async () => {
+  const previous = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = "production";
+    const before = appNames();
+    await assert.rejects(createFirestoreContext({projectId:"demo-app-cuoi-ky", emulatorHost: emulatorHost ?? "127.0.0.1:8089", demoMode:true}), /Production rejects/);
+    await assert.rejects(createFirestoreContext({projectId:"demo-app-cuoi-ky", emulatorHost: emulatorHost ?? "127.0.0.1:8089", seedDemo:true}), /Production rejects/);
+    assert.deepEqual(appNames(), before);
+  } finally { if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous; }
+});

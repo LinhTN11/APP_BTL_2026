@@ -62,7 +62,8 @@ export async function requireTransactionSession(
     session.userId !== actor ||
     session.revokedAt !== null ||
     session.expiresAt <= ctx.config.now() ||
-    userDoc.data()?.accountStatus !== "active"
+    !ctx.availableUser(userDoc.data()) ||
+    (!ctx.config.demoMode && session.mode === "demo")
   )
     fail(401, "SESSION_EXPIRED", "Phiên đăng nhập không còn hiệu lực");
 }
@@ -100,7 +101,7 @@ export async function requireActiveFirestoreMatch(
     match.status !== "active" ||
     docs[0].exists ||
     docs[1].exists ||
-    docs.slice(2).some((x) => x.data()?.accountStatus !== "active")
+    docs.slice(2).some((x) => !ctx.availableUser(x.data()))
   )
     fail(403, "MATCH_INACTIVE", "Kết nối đã kết thúc");
   return match;
@@ -127,12 +128,43 @@ export function endFirestoreMatchRooms(
   ctx.io.to(`match:${matchId}`).emit("match:ended", { matchId, reason });
   ctx.io.in(`match:${matchId}`).socketsLeave(`match:${matchId}`);
 }
-const complete = (ctx: FirestoreContext, profile: DocumentData | undefined) =>
+export type ProfileRequirement = "displayName" | "dateOfBirth" | "bio" | "media";
+export function missingProfileRequirements(
+  ctx: FirestoreContext,
+  profile: DocumentData | undefined,
+  hasValidMedia: boolean = (profile?.mediaIds?.length ?? 0) > 0
+): ProfileRequirement[] {
+  const missing: ProfileRequirement[] = [];
+  if (!profile?.displayName?.trim()) missing.push("displayName");
+  if (ctx.age(profile?.dateOfBirth) < 18) missing.push("dateOfBirth");
+  if (!profile?.bio?.trim()) missing.push("bio");
+  if (!hasValidMedia) missing.push("media");
+  return missing;
+}
+export async function hasValidProfileMedia(
+  ctx: FirestoreContext,
+  userId: string,
+  profile: DocumentData | undefined,
+  tx?: Transaction
+): Promise<boolean> {
+  const mediaIds = (profile?.mediaIds as string[] | undefined) ?? [];
+  if (!(mediaIds.length > 0)) return false;
+  const refs = mediaIds.map((id) => ctx.ref("media", id));
+  const docs = tx ? await tx.getAll(...refs) : await ctx.db.getAll(...refs);
+  return docs.some(
+    (d) =>
+      d.exists &&
+      d.data()?.userId === userId &&
+      d.data()?.scope === "profile"
+  );
+}
+export const complete = (
+  ctx: FirestoreContext,
+  profile: DocumentData | undefined,
+  hasValidMedia?: boolean
+) =>
   !!profile &&
-  ctx.age(profile.dateOfBirth ?? "") >= 18 &&
-  !!profile.displayName?.trim() &&
-  !!profile.bio?.trim() &&
-  profile.mediaIds?.length > 0;
+  missingProfileRequirements(ctx, profile, hasValidMedia).length === 0;
 const kilometres = (a: DocumentData, b: DocumentData) => {
   const r = Math.PI / 180,
     x =
@@ -149,10 +181,14 @@ export function registerFirestoreMatching(
 ) {
   app.get("/v1/discovery", async (req) => {
     const { limit, cursor } = pagination(req.query);
-    const [preferenceDoc, locationDoc] = await ctx.db.getAll(
+    const [preferenceDoc, locationDoc, ownProfileDoc] = await ctx.db.getAll(
       ctx.ref("preferences", req.actor),
-      ctx.ref("locations", req.actor)
+      ctx.ref("locations", req.actor),
+      ctx.ref("profiles", req.actor)
     );
+    const ownProfile = ownProfileDoc.data();
+    const ownHasMedia = await hasValidProfileMedia(ctx, req.actor, ownProfile);
+    const ownMissing = missingProfileRequirements(ctx, ownProfile, ownHasMedia);
     const preferences = preferenceDoc.data() ?? {
       genders: ["male", "female", "other"],
       minAge: 18,
@@ -165,6 +201,10 @@ export function registerFirestoreMatching(
     let after = cursor,
       scanned = 0,
       exhausted = false;
+    let excludedByInteraction = 0;
+    let excludedByIncomplete = 0;
+    let excludedByFilter = 0;
+    let excludedByRadius = 0;
     // Bounded scan windows avoid loading an entire cloud collection when filters exclude most candidates.
     while (data.length < limit && scanned < 200 && !exhausted) {
       let query = ctx
@@ -186,7 +226,7 @@ export function registerFirestoreMatching(
         consumed++;
         scanned++;
         after = [user.createdAt, user.id];
-        if (target === req.actor) continue;
+        if (target === req.actor || !ctx.availableUser(user)) continue;
         const docs = await ctx.db.getAll(
           ctx.ref("profiles", target),
           ctx.ref("blocks", `${req.actor}_${target}`),
@@ -195,27 +235,33 @@ export function registerFirestoreMatching(
           ctx.ref("matches", pairDocumentId(req.actor, target)),
           ctx.ref("locations", target)
         );
-        const profile = docs[0].data();
-        if (
-          !complete(ctx, profile) ||
-          profile!.visibility !== "public" ||
-          docs.slice(1, 5).some((document) => document.exists)
-        )
+        if (docs.slice(1, 5).some((document) => document.exists)) {
+          excludedByInteraction++;
           continue;
+        }
+        const profile = docs[0].data();
+        if (!complete(ctx, profile) || profile!.visibility !== "public") {
+          excludedByIncomplete++;
+          continue;
+        }
         const age = ctx.age(profile!.dateOfBirth);
         if (
           !preferences.genders.includes(profile!.gender) ||
           age < preferences.minAge ||
           age > preferences.maxAge
-        )
+        ) {
+          excludedByFilter++;
           continue;
+        }
         const filters = preferences.advancedFilters ?? {},
           advanced = profile!.advanced ?? {};
         if (
           filters.datingGoal != null &&
           profile!.datingGoal !== filters.datingGoal
-        )
+        ) {
+          excludedByFilter++;
           continue;
+        }
         if (
           ["children", "education", "religion", "hometown"].some(
             (key) =>
@@ -226,33 +272,67 @@ export function registerFirestoreMatching(
                 .toLowerCase() !==
                 String(filters[key]).normalize("NFKC").trim().toLowerCase()
           )
-        )
+        ) {
+          excludedByFilter++;
           continue;
+        }
         if (
           filters.minHeightCm != null &&
           (advanced.heightCm == null || advanced.heightCm < filters.minHeightCm)
-        )
+        ) {
+          excludedByFilter++;
           continue;
+        }
         if (
           filters.maxHeightCm != null &&
           (advanced.heightCm == null || advanced.heightCm > filters.maxHeightCm)
-        )
+        ) {
+          excludedByFilter++;
           continue;
+        }
         const location = docs[5].data();
         if (
           ownLocation?.consent &&
           location?.consent &&
           kilometres(ownLocation, location) > preferences.radiusKm
-        )
+        ) {
+          excludedByRadius++;
           continue;
+        }
         // Recheck block visibility before returning the public profile DTO.
-        if (await ctx.blocked(req.actor, target)) continue;
-        data.push(await ctx.profile(target));
+        if (await ctx.blocked(req.actor, target)) {
+          excludedByInteraction++;
+          continue;
+        }
+        const dto = await ctx.profile(target);
+        if (!(dto.media?.length > 0)) {
+          excludedByIncomplete++;
+          continue;
+        }
+        data.push(dto);
         if (data.length === limit) break;
       }
       exhausted =
         consumed === snapshot.size &&
         snapshot.size < Math.min(50, 200 - scanned + consumed);
+    }
+    let emptyReason: string | undefined;
+    if (data.length === 0 && exhausted) {
+      if (excludedByFilter > 0 || excludedByRadius > 0) {
+        emptyReason =
+          "Không có hồ sơ khớp với bộ lọc hoặc bán kính hiện tại. Bạn có thể mở Bộ lọc cơ bản hoặc cập nhật vị trí GPS rồi thử lại.";
+      } else if (excludedByInteraction > 0 && excludedByIncomplete > 0) {
+        emptyReason =
+          "Bạn đã xem hoặc tương tác hết các hồ sơ đủ điều kiện hiện có; các tài khoản còn lại chưa hoàn thiện hồ sơ (thiếu giới thiệu hoặc ảnh).";
+      } else if (excludedByInteraction > 0) {
+        emptyReason =
+          "Bạn đã xem hoặc tương tác hết các hồ sơ đủ điều kiện hiện tại (các hồ sơ đã Thích, Bỏ qua, Chặn hoặc đã kết thúc kết nối sẽ không hiện lại).";
+      } else if (excludedByIncomplete > 0) {
+        emptyReason =
+          "Chưa có hồ sơ công khai nào khác hoàn thiện đủ thông tin (tên, ngày sinh 18+, giới thiệu và ít nhất 1 ảnh).";
+      } else {
+        emptyReason = "Hiện chưa có tài khoản nào khác khả dụng trong hệ thống.";
+      }
     }
     return {
       data,
@@ -265,6 +345,9 @@ export function registerFirestoreMatching(
         reason: ownLocation?.consent
           ? "Chỉ lọc bán kính với hồ sơ có vị trí được đồng ý"
           : "Chưa có quyền vị trí; bán kính chưa áp dụng, không giả khoảng cách",
+        ownProfileComplete: ownMissing.length === 0,
+        missingRequirements: ownMissing,
+        ...(emptyReason ? { emptyReason } : {}),
       },
     };
   });
@@ -314,19 +397,51 @@ export function registerFirestoreMatching(
             reverseSwipe,
           ] = docs.map((x) => x.data());
         await requireTransactionSession(ctx, tx, actor, req.sessionId);
-        if (!target || target.accountStatus !== "active")
+        if (!ctx.availableUser(target))
           fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
+        const ownHasMedia = await hasValidProfileMedia(
+          ctx,
+          actor,
+          ownProfile,
+          tx
+        );
+        const targetHasMedia = await hasValidProfileMedia(
+          ctx,
+          targetUserId,
+          targetProfile,
+          tx
+        );
+        const ownMissing = missingProfileRequirements(
+          ctx,
+          ownProfile,
+          ownHasMedia
+        );
+        if (!ctx.availableUser(ownUser) || ownMissing.length > 0) {
+          const labels: Record<ProfileRequirement, string> = {
+            displayName: "tên hiển thị",
+            dateOfBirth: "ngày sinh đủ 18 tuổi",
+            bio: "phần giới thiệu",
+            media: "ít nhất 1 ảnh hồ sơ",
+          };
+          const detail = ownMissing.map((key) => labels[key]).join(", ");
+          fail(
+            422,
+            "PROFILE_INCOMPLETE",
+            detail
+              ? `Hồ sơ của bạn chưa đầy đủ (thiếu ${detail}). Hãy vào mục Tôi để hoàn thiện trước khi tương tác.`
+              : "Hồ sơ của bạn hiện không khả dụng."
+          );
+        }
         if (
-          ownUser?.accountStatus !== "active" ||
           block ||
           reverseBlock ||
-          !complete(ctx, ownProfile) ||
-          !complete(ctx, targetProfile)
+          !complete(ctx, targetProfile, targetHasMedia) ||
+          targetProfile?.visibility !== "public"
         )
           fail(
             422,
             "PROFILE_UNAVAILABLE",
-            "Hồ sơ chưa đầy đủ hoặc không khả dụng"
+            "Hồ sơ đối phương hiện không khả dụng hoặc chưa đầy đủ"
           );
         if (match?.status === "ended")
           fail(409, "MATCH_ENDED", "Kết nối đã kết thúc; không tự match lại");
@@ -352,8 +467,24 @@ export function registerFirestoreMatching(
           };
           tx.create(ctx.ref("matches", id), savedMatch);
         }
-        return { swipeId: savedSwipe.id, match: savedMatch };
+        return { swipeId: savedSwipe.id, match: savedMatch, created: !match && !!savedMatch };
       });
+      if (result.created && result.match) {
+        const { authenticate } = await import("./auth.js");
+        for (const memberId of result.match.memberIds) {
+          try {
+            await requireActiveFirestoreMatch(ctx, memberId, id);
+            for (const socket of ctx.io.sockets.sockets.values()) {
+              if (socket.data.userId !== memberId) continue;
+              try { await authenticate(ctx, socket.data.token); }
+              catch { socket.disconnect(true); }
+            }
+            ctx.io.to(`user:${memberId}`).emit("match:created", { matchId: id });
+          } catch (error: any) {
+            if (!["MATCH_INACTIVE", "NOT_FOUND"].includes(error.code)) throw error;
+          }
+        }
+      }
       return {
         data: {
           swipeId: result.swipeId,

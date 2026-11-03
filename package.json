@@ -11,26 +11,39 @@
     "npm": ">=11"
   },
   "scripts": {
+    "prepare": "node scripts/security/install-hooks.mjs",
+    "security:install": "node scripts/security/install-hooks.mjs",
+    "security:check": "node scripts/security/secret-guard.mjs tracked",
+    "security:staged": "node scripts/security/secret-guard.mjs staged",
+    "test:security": "node --test scripts/security/test/*.test.mjs",
     "setup": "node scripts/setup.mjs",
+    "team:export": "node scripts/team-config.mjs export",
+    "team:setup": "node scripts/team-config.mjs import",
+    "test:team": "node --test scripts/test/team-config.test.mjs",
+    "api:docs": "node --import tsx apps/api/scripts/generate-openapi.ts",
+    "test:openapi": "node --import tsx --test apps/api/test/api-docs.test.ts apps/api/test/openapi-contract.test.ts",
     "doctor": "node scripts/doctor.mjs",
     "demo": "node scripts/demo.mjs",
+    "be": "node scripts/demo.mjs --api-only",
+    "fe": "node scripts/demo.mjs --mobile-only",
     "dev": "node scripts/demo.mjs --no-android",
-    "dev:api": "npm run dev --workspace @gap/api",
+    "dev:api": "node scripts/demo.mjs --api-only",
     "dev:mobile": "npm run start --workspace @gap/mobile -- --host 0.0.0.0",
     "android": "node scripts/android.mjs",
     "test:api": "npm run test:firestore",
-    "test:api:reference": "npm test --workspace @gap/api --",
     "test:firestore": "node scripts/firestore-emulator.mjs",
     "demo:emulator": "node scripts/firestore-emulator.mjs --demo",
     "firestore:check": "node --import tsx scripts/firestore.mjs check",
     "firestore:seed": "node --import tsx scripts/firestore.mjs seed",
     "test:mobile": "npm test --workspace @gap/mobile -- --runInBand",
+    "test:startup": "node --test scripts/test/*.test.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "verify": "npm run typecheck && npm run lint && npm run test:api && npm run test:mobile",
+    "verify": "npm run security:check && npm run test:security && npm run typecheck && npm run lint && npm run test:startup && npm run test:openapi && npm run test:api && npm run test:mobile",
     "smoke:demo": "node scripts/firestore-emulator.mjs --smoke"
   },
   "devDependencies": {
-    "firebase-tools": "15.34.2"
+    "firebase-tools": "15.34.2",
+    "lottie-web": "5.13.0"
   }
 }

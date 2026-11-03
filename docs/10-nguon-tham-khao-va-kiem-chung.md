@@ -1,6 +1,6 @@
 # Nguồn tham khảo và giới hạn kiểm chứng
 
-Ngày tra cứu: 01/11/2026. **D12:** Cloud Firestore đã được chọn, nhưng chưa có project/credentials nên chưa kiểm chứng cloud. Các runtime SQLite/prototype/build/test snapshot bên dưới thuộc lượt trước; không suy ra cloud pass. Trạng thái mới xem [12](12-ket-noi-firestore.md) và `docs/qa/verification.md`. **Ghi chú sau D10:** các nguồn Expo/skills Expo bên dưới là lịch sử phương án cũ, đã ngừng áp dụng. Không dùng làm chỉ dẫn stack/build/native module hiện tại; RN Community CLI là bắt buộc. Các quyết định stack/UI là diễn giải áp dụng cho dự án; không phải Apple/Expo bảo chứng app.
+Ngày tra cứu các nguồn: 01/11/2026. **Snapshot trạng thái đó:** D12 đã chọn Cloud Firestore, khi ấy project/credentials chưa có. Đây là ghi nhận lịch sử; setup cloud mới nhất có trong [12](12-ket-noi-firestore.md), [QA verification](qa/verification.md) và [evidence cloud setup](qa/cloud-setup-2026-11-02.md). **Ghi chú sau D10:** các nguồn Expo/skills Expo bên dưới là lịch sử phương án cũ, đã ngừng áp dụng. Không dùng làm chỉ dẫn stack/build/native module hiện tại; RN Community CLI là bắt buộc. Các quyết định stack/UI là diễn giải áp dụng cho dự án; không phải Apple/Expo bảo chứng app.
 
 ## Nguồn yêu cầu
 
@@ -21,7 +21,7 @@ Ngày tra cứu: 01/11/2026. **D12:** Cloud Firestore đã được chọn, như
 | [Expo LocalAuthentication](https://docs.expo.dev/versions/latest/sdk/local-authentication/) | Biometrics OS, Face ID không test được trong Expo Go iOS | Không thay auth server/session |
 | [Expo start developing](https://docs.expo.dev/get-started/start-developing/) | Metro/QR/LAN và tunnel | Mạng API riêng phải cấu hình, tunnel Metro không bao gồm backend |
 | [Fastify Getting Started](https://fastify.dev/docs/latest/Guides/Getting-Started/) | Route/plugin/validation nền tảng | Chưa scaffold hoặc kiểm integration của app |
-| [Firebase Admin setup](https://firebase.google.com/docs/admin/setup) | Credential server qua ADC/service-account, Firestore Admin SDK | Cloud project/credential chưa có, không phải bằng chứng kết nối |
+| [Firebase Admin setup](https://firebase.google.com/docs/admin/setup) | Credential server qua ADC/service-account, Firestore Admin SDK | Tài liệu upstream giải thích setup; trạng thái/quyền hiện tại xem evidence dự án, không suy ra từ tài liệu này |
 | [Firestore transactions](https://firebase.google.com/docs/firestore/manage-data/transactions) | Async transaction/retry và document invariants | Cần emulator test và cloud roundtrip riêng |
 | [Node SQLite](https://nodejs.org/api/sqlite.html) | Embedded SQLite API | Latest docs có thể khác Node24; chỉ dùng API runtime đã thử |
 | [PocketBase introduction](https://pocketbase.io/docs/) | Backend đóng gói auth/realtime/SQLite, phương án so sánh | Không được chọn song song Fastify |
@@ -35,7 +35,7 @@ Các nguồn Apple bổ sung được dùng chi tiết tại cuối docs UI; m�
 - Thư mục ban đầu không có source app hoặc Git repository. Không có commit/push/deploy trong lượt này.
 - Đọc DOCX bằng ZIP/XML, đối chiếu 37 dòng chức năng, lưu bản nguồn và hash.
 - Runtime hiện có: Node v24.15.0, npm 11.3.0; chạy `DatabaseSync(':memory:')` và truy vấn `sqlite_version()` thành công (3.51.3).
-- Lịch sử cài 4 Expo skill local từ commit pinned; sau D10 đã archive vào `.agents/archived-skills/<name>/`, ngừng áp dụng. Không phải skill bắt buộc, không tự chạy script feedback trong skill.
+- Lịch sử cài 4 Expo skill local từ commit pinned; sau D10 đã archive local trong ignored `.local/archived-skills/`, ngừng áp dụng. Không phải skill bắt buộc, không tự chạy script feedback trong skill.
 - Prototype được kiểm tra trình duyệt theo [evidence](prototype/README.md). Chưa có kiểm tra React Native, API app, native Android, live OAuth/AI, payment hoặc selfie provider.
 - Rà soát cuối: 37 mapping nguồn không trùng, 60 screen ID, 12 phase/35 task ID không trùng, checklist BE đủ 37 F và không thiếu target link Markdown nội bộ. Reviewer độc lập đã đối chiếu route/event/DTO/session giữa spec, roadmap và contract; các lệch đã sửa trước bàn giao.
 - Năm skill cục bộ qua `quick_validate.py` sau khi chuẩn hóa frontmatter wireframe; dependency PyYAML được chạy tạm bằng `uv run --with pyyaml`, không thêm vào runtime app.

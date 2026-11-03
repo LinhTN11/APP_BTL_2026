@@ -1,96 +1,73 @@
-# Bàn giao BE → FE (core P01–P05)
+# Bàn giao BE/FE — mỗi máy BE dùng cùng cloud DB
 
-Cập nhật 01/11/2026. Đây là UI-test cho BE; visual FE-product vẫn là bản nháp, chưa có prototype được người dùng chốt. Phạm vi này không đồng nghĩa hoàn thành roadmap 37 chức năng.
+Cập nhật 03/11/2026. Mỗi FE clone repo và chạy API local; tất cả các API phải dùng **đúng cùng Firestore project `app-cuoi-ky-2d653` và namespace `app-cuoi-ky`**. Tài khoản và document test ghi qua một API sẽ thấy trong DB chung.
 
-## Chạy backend cloud
+## Thao tác ngắn
 
-BE tạo Firebase project riêng và cấu hình quyền Admin SDK trên máy chạy backend theo [runbook Firestore](../12-ket-noi-firestore.md). Project ID và namespace không phải secret; Admin credentials chỉ nằm trên máy BE. Chỉ deploy client rules (deny all) và composite indexes vào project mới đã xác nhận. Project/credentials hiện chưa được cấp nên chưa có cloud connection proof.
+### Máy BE đã cấu hình
 
-Trong `.env.local` tại root (không commit):
+Tại repo trên máy đã có cấu hình cloud, chạy (không cần bật server để xuất file):
 
-```dotenv
-DATABASE_MODE=firestore
-FIREBASE_PROJECT_ID=project-id-cua-nhom
-FIRESTORE_NAMESPACE=app-cuoi-ky
-GOOGLE_APPLICATION_CREDENTIALS=C:/duong-dan-tuyet-doi/secrets/firebase-service-account.json
-DEMO_MODE=true
-HOST=0.0.0.0
-PORT=3000
+```powershell
+npm run team:export
 ```
 
-ADC có thể thay `GOOGLE_APPLICATION_CREDENTIALS` nếu được cấu hình rõ trên máy BE. Không đặt `FIRESTORE_EMULATOR_HOST` ở cloud mode. Thiếu project/config hoặc quyền phải hiển thị lỗi; app không tự chuyển SQLite hay emulator.
+Lệnh tạo một tệp `secrets/team-config.json` bị Git ignore, gồm cấu hình client Firebase được cho phép, Admin service-account hiện có, project ID và namespace. Người sở hữu cấu hình chuyển tệp này riêng cho thành viên nhóm qua Zalo như đã thống nhất. Không gửi tệp vào repo hoặc mobile app.
+
+### Mỗi máy FE
+
+Tạo thư mục `secrets/` cạnh `package.json` ở root nếu chưa có. Tải file từ Zalo, giữ đúng tên `team-config.json` và đặt tại `PROJECT_ROOT/secrets/team-config.json` trong bản clone. Không cần nhập đường dẫn tải xuống trong lệnh.
+
+```text
+APP-Cuoi-Ky/
+  secrets/
+    team-config.json                    ← file tải từ Zalo
+    team-firebase-service-account.json  ← tự tạo bởi team:setup
+  .env.local                            ← tự tạo/cập nhật bởi team:setup
+```
 
 ```powershell
 npm ci
+npm run team:setup
 npm run firestore:check
-npm run firestore:seed
 npm run demo
 ```
 
-`firestore:check` là probe kết nối/quyền đọc; `firestore:seed` là lệnh ghi fixture A/B/C/D có chủ ý, create-if-absent, không reset dữ liệu. `demo` dùng Firestore cloud mode. Chỉ chạy các lệnh ghi sau khi BE xác nhận đúng project/namespace. Client rules và composite indexes phải được triển khai vào đúng project mới; xem runbook.
+`team:setup` nhập cấu hình vào `.env.local` và trích service account ra `PROJECT_ROOT/secrets/team-firebase-service-account.json`; nó ghi đường dẫn tuyệt đối của máy nhận để API dùng được cả khi chạy từ `apps/api`. Không sửa tay đường dẫn credential. Có thể dùng `npm run team:setup -- --file <đường-dẫn-khác>` nếu bundle đang ở vị trí khác. Sau khi import thành công, chỉ cần giữ bản local dưới `secrets/`; cả hai file secret đều bị Git ignore.
 
-## Chạy app FE
+`npm run demo` chạy API và Metro/app trên máy FE. Nếu chỉ cần API, dùng `npm run be`. App đăng nhập qua API local đang kết nối cùng Firestore project/namespace với các thành viên khác.
 
-FE chỉ cần API URL và React Native Community CLI; **không cần Firebase project ID, service-account file hay Admin key**. Cấu hình URL tới backend dùng chung theo LAN/USB/emulator bên dưới. FE không kết nối Firestore trực tiếp.
+## Swagger UI và xác thực API
 
-## Runtime
+Sau khi BE chạy, mở `http://127.0.0.1:3000/docs` trong trình duyệt để xem API. Nút **Authorize** nhận opaque API session Bearer token. Không dán Firebase ID token hoặc Admin key vào đó. Firebase ID token được đổi lấy API session qua `POST /v1/auth/firebase`; app thực hiện bước này sau khi người dùng đăng nhập bằng Firebase SDK. [OpenAPI contract](../api/openapi.yaml).
 
-Yêu cầu Node 24.15.x, npm 11+, JDK 21 (đã dùng khi build), Android SDK/ADB và emulator hoặc thiết bị Android. React Native Community CLI 20.2.0, React Native 0.88.1, React 19.3.0; **không dùng Expo/Expo Go**.
+Thử `GET /health` bằng **Try it out → Execute** trước. Với API cần đăng nhập, đổi Firebase ID token ở `POST /v1/auth/firebase`, copy `data.token` trong response vào **Authorize** (chỉ giá trị token, Swagger tự thêm `Bearer`). Có thể tải spec tại `/docs/json` hoặc `/docs/yaml`. Khi sửa contract, BE chạy `npm run api:docs`; khởi động lại BE để nạp spec mới.
 
-```powershell
-npm run doctor
-```
+## Cấu hình và dữ liệu dùng chung
 
-Yêu cầu Node 24.15.x, npm 11+, JDK 21 (đã dùng khi build), Android SDK/ADB và emulator hoặc thiết bị Android. React Native Community CLI 20.2.0, React Native 0.88.1, React 19.3.0; **không dùng Expo/Expo Go**. Trên máy BE đã cấu hình cloud, giữ terminal `npm run demo` chạy; lệnh khởi động API và Metro. Cài/chạy app ở terminal khác:
+- Chỉ một cặp giá trị project/namespace được dùng: `app-cuoi-ky-2d653` / `app-cuoi-ky`. Script setup từ chối file sai cặp hoặc cấu hình emulator đang bật; không tự sửa cấu hình đang trỏ sang DB khác.
+- Tệp bàn giao chứa credential BE nhạy cảm. Chuyển riêng cho thành viên nhóm qua kênh đã thống nhất; không đưa vào Git, issue, log, app bundle hoặc chat với AI. Mỗi máy giữ bản local trong `secrets/` và `.env.local`.
+- Cấu hình Firebase client (API key, App ID, project ID, OAuth client ID) là public config; Admin service-account key mới là credential backend. App mobile chỉ nhận public config qua API, không đóng gói Admin key.
+- Các tài khoản, profile, preferences, match và message lưu Firestore dùng chung nên thay đổi của nhóm thấy được trong cùng DB. Không seed/reset DB chung khi kiểm tra kết nối.
+- Ảnh profile hiện lưu bytes trên filesystem cục bộ của từng API, không nằm trong Firestore. Metadata có thể đồng bộ qua DB, nhưng bytes ảnh do một máy tải lên không tự xuất hiện trên máy BE khác. Vì vậy media chưa được chia sẻ bền vững giữa các API local.
+- `message:created` được phát bởi tiến trình API đã nhận tin, chưa có fanout nội dung chat giữa các BE local. Một số event vòng đời như `match:created`/`match:ended` có listener dựa trên Firestore, nhưng không suy ra mọi socket event đều chạy xuyên máy. REST reload vẫn đọc dữ liệu đã commit từ DB chung.
 
-```powershell
-npm run android
-```
+## Nếu bước nào lỗi
 
-Trên Android emulator mặc định, API origin là `http://10.0.2.2:3000`; Metro dùng cổng 8081. Với thiết bị USB, thay `<serial>` bằng ID từ `adb devices -l`, rồi chạy:
+- `team:setup` báo project/namespace không khớp: dừng, nhờ chủ cấu hình xuất lại tệp; không chỉnh ID hoặc trỏ sang DB khác.
+- `npm run firestore:check` chỉ kiểm tra đọc kết nối cloud. Nếu lỗi, kiểm tra tệp cấu hình đã tải đúng, `.env.local` không còn emulator/giá trị cũ và credential local tồn tại; không dán nội dung key vào log.
+- Nếu Google Sign-In lỗi ở build debug trên máy FE, package và SHA-1 chứng chỉ debug có thể khác máy hiện tại. Chỉ cần đăng ký SHA-1 debug công khai phù hợp trong Firebase/Google Console; không đưa Admin key vào app. Xem [Firebase Auth](../firebase-auth.md).
+- Emulator là lane riêng: `npm run demo:emulator` / `npm run test:firestore` dùng Firestore Emulator, không phải DB nhóm và không thay cho `firestore:check`.
 
-```powershell
-adb -s <serial> reverse tcp:3000 tcp:3000
-adb -s <serial> reverse tcp:8081 tcp:8081
-```
+## Phạm vi API hiện tại
 
-Khi dùng USB, nhập `http://127.0.0.1:3000` trong ô URL API trên màn đăng nhập. Trên máy thật qua Wi-Fi, nhập `http://<LAN-IP-máy-chạy-API>:3000` và đảm bảo Metro truy cập được qua 8081. `localhost` trên điện thoại là chính điện thoại. Không ghi token/secret vào bug report.
-
-`npm run setup` chuẩn bị runtime thủ công; `npm run dev` bật demo không tự mở Android; `npm run dev:api` và `npm run dev:mobile` chạy riêng API/Metro. `npm run test:firestore` chạy emulator suite, không phải cloud proof. `npm run demo:emulator` và `npm run smoke:demo` chọn emulator rõ ràng, không được gọi là cloud. Các lệnh kiểm tra riêng gồm `npm run typecheck`, `npm run lint`, `npm run test:mobile`; `npm run verify` gom các lệnh typecheck/lint/tests theo manifest hiện tại.
-
-## Phiên demo và luồng kiểm tra
-
-Trong `DEMO_MODE=true`, đăng nhập bằng A/B/C/D ở danh sách app. Tài khoản là fixture hư cấu; không có mật khẩu hoặc token dùng chung. A và B chưa match sẵn: đăng nhập A và like B, sau đó đăng nhập B và like A. A refresh danh sách match rồi mở chat. C dùng để kiểm tra không thể đọc/gửi/subscribe chat A–B; D thuộc fixture cặp riêng C–D. OTP demo không gửi SMS và không chứng minh quyền sở hữu số điện thoại.
-
-**Luồng đã được kiểm tra tích hợp trên Android theo evidence hiện có:** A đăng nhập, xem discovery/media, like; B like lại qua API để tạo mutual match; A refresh match và mở chat. Luôn ghi backend/mode cùng kết quả; emulator Firestore không chứng minh cloud. Native gửi tin và keyboard/resize đang **đang xác thực**, chưa được tính pass.
-
-## Contract cần giữ
-
-- Thành công trả HTTP 200 kể cả tạo mới: `{data: ...}`; phân trang có thể thêm `{meta:{nextCursor}}`.
-- Lỗi: `{error:{code,message,requestId,fieldErrors?}}`. Giữ `requestId`, status và body đã bỏ thông tin nhạy cảm khi báo lỗi. Các status thường gặp: 400 validation, 401 session, 403 quyền, 404 không tồn tại/không tiết lộ, 409 conflict, 413 dung lượng, 422 nghiệp vụ, 429 rate limit, 503 provider unavailable.
-- `GET /v1/matches/:id/messages` trả lịch sử **cũ trước, mới sau** theo `(createdAt,id)`. Theo `nextCursor` tới khi `null`; refresh cuối danh sách bằng cách tải lại và upsert theo message `id`.
-- Gửi tin qua REST với `clientMessageId` UUID. Retry cùng ID và nội dung trả lại message cũ; đổi nội dung với cùng ID nhận 409. Socket chỉ nhận event `message:created`; reconnect phải tải REST. `match:ended` có reason `blocked|unmatched` và kết thúc chat.
-- Enum hợp đồng: gender `female|male|other`; datingGoal `relationship|friendship|casual|unsure`; lifestyle frequency `never|sometimes|often|prefer_not_to_say`; message kind `text|gif|sticker|location`; provider mode `real|demo|unavailable`; verification demo `not_submitted|pending`.
-- Profile gồm `displayName`, `dateOfBirth` (riêng tư, không có trong public profile), `age`, `gender`, `bio`, `datingGoal`, `interests`, `lifestyle`, `media`, verification. Preferences: `genders`, `minAge`, `maxAge`, `radiusKm`. Message gồm `id`, `matchId`, `senderId`, `clientMessageId`, `kind`, `text?`, `payload?`, `createdAt`.
-- GIF/sticker hiện là nhãn catalog local, không có animation/provider ngoài. Selfie chỉ ở trạng thái pending/demo, không cấp verified badge. Video upload chưa khả dụng. Location chỉ chia sẻ tọa độ tự nguyện của người gửi. Không có Google/OAuth integration.
-
-OpenAPI canonical: [docs/api/openapi.yaml](../api/openapi.yaml); hướng dẫn: [API README](../api/README.md), [Firestore core](../api/firestore-core.md), [Firestore interaction](../api/firestore-interaction.md). Root đang cập nhật health schema; trước thay đổi breaking, đồng bộ OpenAPI/DTO và ghi chú ở đây.
-
-## Bản đồ màn hình
-
-| Màn hình | File |
+| Phạm vi | Trạng thái BE/API |
 |---|---|
-| Đăng nhập, chọn demo account, API URL/capabilities | `apps/mobile/src/screens/Login.tsx` |
-| Discovery, like/pass, danh sách match | `apps/mobile/src/screens/Discover.tsx` |
-| Sửa hồ sơ, ảnh, location, selfie demo | `apps/mobile/src/screens/MyProfile.tsx` |
-| Chat, REST/socket, catalog, chia sẻ location | `apps/mobile/src/screens/Chat.tsx` |
-| Block, unmatch, report | `apps/mobile/src/screens/Safety.tsx` |
-| API/error/URL/media client | `apps/mobile/src/api.ts` |
-| Session và credential thiết bị | `apps/mobile/src/session.ts` |
-| UI primitives/theme | `apps/mobile/src/ui.tsx` |
+| Auth | Firebase SDK email/Google → `POST /v1/auth/firebase` → API session. Route auth tùy biến cũ trả 410. Tài khoản Google thật trên thiết bị cần kiểm chứng. |
+| Hồ sơ/khám phá | Profile, ảnh, lifestyle, bộ lọc cơ bản, vị trí consent và Like/Pass/Match gọi API thật. Video và bộ lọc nâng cao còn thiếu. |
+| Chat/an toàn | REST + Socket.IO, text, vị trí một điểm do người gửi chủ động, Unmatch/Block/Report. GIF/sticker provider thật chưa có. |
+| P06–P10 | Phần lớn chưa triển khai Firestore; xem [ma trận 37F và backlog BE](../backend/requirements.md). |
 
-## Báo lỗi và trạng thái xác nhận
+FE giữ envelope `{data,...meta}` hoặc `{error:{code,message,requestId,fieldErrors?}}`. Bearer session được lưu an toàn trên máy; không log token. REST là nguồn dữ liệu tin nhắn; retry giữ `clientMessageId` và nội dung; reconnect tải lại REST, upsert theo ID. [Contract hiện hành](../api/README.md) · [OpenAPI](../api/openapi.yaml).
 
-Gửi bước tái hiện, account A/B/C/D, thiết bị/API mode, expected/actual, thời điểm, `requestId`, HTTP status/body đã bỏ token/số riêng tư và ảnh/quay màn nếu hữu ích. Không gửi session token, OTP, ảnh riêng tư hoặc dữ liệu người thật. Ghi native/keyboard/profile race là đang xác minh cho tới khi có kết quả tái hiện và sửa.
-
-Backend report và mobile report lưu evidence worker lịch sử; xem tổng hợp trạng thái hiện tại, phân biệt SQLite cũ/emulator Firestore/cloud và build/device tại [QA verification](../qa/verification.md). Chưa có API freeze tuyệt đối; phối hợp trước khi FE phụ thuộc vào thay đổi contract.
+`team-cloud.json` ở root chỉ chứa project ID/namespace công khai. Export/import đối chiếu file này để không nhận nhầm bundle của DB khác. Muốn đổi DB của cả team phải cập nhật quyết định và manifest trước, không tự sửa ID trong bundle.

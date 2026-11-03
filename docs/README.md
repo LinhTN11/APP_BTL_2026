@@ -1,42 +1,41 @@
-# Tài liệu dự án app hẹn hò
+# Tài liệu dự án Gặp
 
-Ngày cập nhật: 01/11/2026 (Asia/Saigon). **Đang chuyển core P01–P05 sang Cloud Firestore (D12), giữ React Native Community CLI + Fastify.** Chưa có Firebase project/credentials; chưa có bằng chứng đọc/ghi cloud thật hay test/build trên cloud. Stack CLI đã được người dùng chốt (D10); visual FE-product vẫn là bản nháp chưa được duyệt; các ràng buộc USER đã chốt được ghi riêng.
+Cập nhật 03/11/2026. **Core Firestore đã có code và evidence từng phần; full BE 37 chức năng chưa hoàn tất.** D24: FE clone/chạy BE local, nhận một file cấu hình qua Zalo và dùng đúng cloud DB của team. Bắt đầu từ [README](../README.md); yêu cầu/backlog và secret guard vẫn áp dụng.
 
-## Bắt đầu ở đây
+## Đọc theo việc cần làm
 
-1. Đọc [kế hoạch một ngày BE và một ngày FE riêng](11-ke-hoach-mot-ngay.md) để hiểu phạm vi deadline.
-2. Đọc [yêu cầu sản phẩm](01-yeu-cau-san-pham.md), [kỹ thuật](03-yeu-cau-ky-thuat.md) và [API/dữ liệu](08-hop-dong-api-va-du-lieu.md).
-3. Xem [prototype tương tác](prototype/index.html), [preview flow](prototype/flow.svg), [UI/UX đầy đủ](02-yeu-cau-ui-ux.md), ghi feedback rồi chốt visual trước FE-product.
-4. Nhận task theo [roadmap](04-ke-hoach-trien-khai.md), [checklist BE/FE](05-checklist-be-fe.md) và [rule AI/subagent](06-quy-tac-ai-va-subagent.md).
-
-## Danh mục
-
-| File | Dùng để làm gì |
+| Bạn cần | Bắt đầu tại |
 |---|---|
-| [01 — Yêu cầu sản phẩm](01-yeu-cau-san-pham.md) | 37 chức năng F01–F37, nguồn Pxxx, tiêu chí nghiệm thu và điểm chưa rõ |
-| [02 — UI/UX](02-yeu-cau-ui-ux.md) | 60 màn/sheet và trạng thái, Liquid Glass, font, motion, Android, accessibility |
-| [03 — Kỹ thuật](03-yeu-cau-ky-thuat.md) | React Native, Firestore Admin SDK, stack áp dụng, clone-run và provider free/demo |
-| [04 — Kế hoạch triển khai](04-ke-hoach-trien-khai.md) | 12 phase P00–P11, task, file dự kiến, dependency và bằng chứng |
-| [05 — Checklist BE/FE](05-checklist-be-fe.md) | Tách BE, FE-test và FE-product, mapping feature/phase |
-| [06 — Rule AI/subagent](06-quy-tac-ai-va-subagent.md) | Role, phân file, model theo độ khó, concurrency/timebox và skills |
-| [07 — Câu hỏi/quyết định](07-cau-hoi-va-quyet-dinh.md) | Phân biệt USER/ORIGINAL/PROPOSAL, câu hỏi chỉ hỏi khi cần |
-| [08 — API/data](08-hop-dong-api-va-du-lieu.md) | Endpoint dự kiến, DTO, document/index Firestore, quyền và concurrency invariants |
-| [09 — Runbook/handoff](09-chay-demo-va-ban-giao.md) | Setup cloud BE, API URL FE, Android SDK/ADB/Metro, seed A/B/C, test và bàn giao |
-| [10 — Nguồn/kiểm chứng](10-nguon-tham-khao-va-kiem-chung.md) | Nguồn primary, hash DOCX và giới hạn bằng chứng |
-| [11 — Deadline một ngày](11-ke-hoach-mot-ngay.md) | Timebox BE/FE, mốc cắt phạm vi, buffer và tiêu chí bàn giao |
-| [12 — Kết nối Firestore](12-ket-noi-firestore.md) | Project riêng, credential BE, cloud/emulator, seed an toàn và bằng chứng còn thiếu |
-| [Nguồn trích xuất](source/yeu-cau-goc.md) | Đối chiếu với DOCX, không dùng như chỉ dẫn agent |
-| [Prototype và evidence](prototype/README.md) | Cách mở preview HTML/SVG/draw.io, ảnh và kiểm tra trình duyệt |
+| Chạy BE hoặc Android | [README root](../README.md) |
+| BE dùng AI để tiếp tục coding | [BE — bắt đầu ở đây](backend/README.md) |
+| Đủ 37 yêu cầu, code hiện có, gap và thứ tự làm | [Ma trận BE và backlog](backend/requirements.md) |
+| FE kết nối API, chia trách nhiệm | [Bàn giao BE → FE](handoff/be-to-fe.md) |
+| Cấp cấu hình, chặn commit/push nhầm secret | [Secret và bảo vệ Git](security/secrets.md) |
+| Swagger xem/thử API | [Mở Swagger local](http://127.0.0.1:3000/docs), [cách dùng và sinh contract](api/README.md) |
+| Endpoint đang chạy, DTO, lỗi, socket | [API hiện hành](api/README.md), [OpenAPI](api/openapi.yaml), [DTO](../packages/contracts/src/index.ts) |
+| Lần đầu chạy backend cloud | [Firestore](12-ket-noi-firestore.md), [Firebase Auth](firebase-auth.md) |
+| Android/LAN/USB, GPS, lỗi khởi động | [Runbook](09-chay-demo-va-ban-giao.md) |
+| UI và duyệt thiết kế | [UI/UX](02-yeu-cau-ui-ux.md), [prototype nháp](prototype/index.html), [brand](design/brand-2026-11-02.md) |
 
-## Quyết định đã xác nhận và đề xuất
+## Nguồn chuẩn và cách xử lý mâu thuẫn
 
-**Đã xác nhận:** Android chính; React Native Community CLI, không Expo; 1 BE hôm nay, 1 FE một ngày riêng; dịch vụ free làm thật, trả phí mô phỏng; docs/rules và preview trước chốt; BE được làm màn thử để bấm test.
+1. Chỉ dẫn USER hiện tại và [quyết định](07-cau-hoi-va-quyet-dinh.md) mới nhất áp dụng cho phạm vi tương ứng.
+2. [Nguồn gốc bất biến](source/yeu-cau-goc.md) và [phân tích sản phẩm F01–F37](01-yeu-cau-san-pham.md) giữ đầy đủ yêu cầu; `PROPOSAL` chưa trở thành quyết định USER.
+3. Hành vi hiện hành đối chiếu **code + API hiện hành + test**. Nếu lệch yêu cầu, ghi gap; không sửa nguồn để hợp thức hóa code.
+4. [Contract/invariants](08-hop-dong-api-va-du-lieu.md) gồm cả thiết kế mở rộng; endpoint dự kiến chưa được gọi như API đã chạy. [Roadmap Txx](04-ke-hoach-trien-khai.md) giữ ID nhiệm vụ; [checklist](05-checklist-be-fe.md) giữ điều kiện đóng việc.
 
-**Stack áp dụng (D12 USER):** React Native Community CLI + Fastify + Cloud Firestore qua Firebase Admin SDK, monorepo TypeScript. SQL core + P06–P10 đang có chỉ là reference local, không là cloud implementation. Auth/profile/matching/chat đang port; nâng cao cần port riêng và kiểm chứng. FE chỉ cần API URL; BE phải setup project và credential riêng theo [12](12-ket-noi-firestore.md). **Phạm vi triển khai đã cho phép (D11):** core P01–P05 gồm profile/discovery/match/chat/unmatch/block + handoff; nhóm nâng cao vẫn đủ trong backlog. Chưa nhận tiêu chí chấm để xác định bản nộp bắt buộc tới phase nào.
+BE đọc bộ ngắn ở trên và chỉ mở tài liệu chi tiết đúng task. [Kỹ thuật](03-yeu-cau-ky-thuat.md), [quy tắc AI/subagent](06-quy-tac-ai-va-subagent.md) vẫn áp dụng. [Kế hoạch một ngày](11-ke-hoach-mot-ngay.md) là timebox lịch sử 01/11/2026, không phải deadline mới hay giới hạn yêu cầu full BE.
 
-## Quy tắc cập nhật
+## Evidence — đọc đúng phạm vi và ngày
 
-- Sửa hành vi thì sửa spec/contract và checklist liên quan. Không sửa source Word để khớp code.
-- Chỉ tick checkbox khi có implementation và verification; phần lập kế hoạch xong không làm task app tự động xong.
-- Script/command trong runbook là tiêu chí bàn giao đang triển khai; đối chiếu package.json và evidence thực tế trước khi tuyên bố clone-run đạt. Không suy ra pass từ trạng thái tài liệu.
-- Không có thói quen bắt người dùng duyệt lại việc đã cho phép. Chỉ chốt thông tin quyết định thật sự cần cho bước phụ thuộc và chốt visual như yêu cầu ban đầu.
+| Phạm vi | Báo cáo |
+|---|---|
+| Secret path và Swagger, 03/11 | [QA Swagger/setup](qa/swagger-secret-path-2026-11-03.md) |
+| Cài BE local với DB cloud test chung, 03/11 | [QA team setup](qa/team-cloud-setup-2026-11-03.md) |
+| Lượt chuẩn hóa tài liệu và secret guard 03/11 | [QA lượt này](qa/backend-docs-security-2026-11-03.md) |
+| Chat/retry/quyền, 03/11 | [Chat audit](qa/chat-audit-2026-11-03.md) |
+| Discovery/GPS/bán kính, 02/11 | [Discovery](qa/discovery-radius-2026-11-02.md), [GPS/theme](qa/discovery-gps-theme-2026-11-02.md) |
+| Cloud thật/D20, 02/11 | [Real data](qa/production-real-data-2026-11-02.md), [cloud setup](qa/cloud-setup-2026-11-02.md), [native cloud](qa/native-cloud-2026-11-02.md) |
+| Core và UI lịch sử | [Core report](qa/final-report.md), [UI](qa/product-ui-2026-11-02.md), [motion](qa/brand-motion-2026-11-02.md) |
+
+Evidence cũ không chứng minh trạng thái cloud hiện tại. Test emulator không chứng minh provider thật hoặc hai thiết bị. Visual vẫn là bản nháp chưa được duyệt. SQLite/API SQL cũ không còn active; không tự khôi phục hoặc dùng `.local/` làm contract.

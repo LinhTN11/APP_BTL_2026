@@ -63,19 +63,19 @@ export const profilePatch = object(
     advanced: advancedProfile,
     lifestyle: object(
       {
-        zodiac: str(30),
-        smoking: enumString([
+        zodiac: nullable(str(30)),
+        smoking: nullable(enumString([
           "never",
           "sometimes",
           "often",
           "prefer_not_to_say",
-        ]),
-        drinking: enumString([
+        ])),
+        drinking: nullable(enumString([
           "never",
           "sometimes",
           "often",
           "prefer_not_to_say",
-        ]),
+        ])),
       },
       []
     ),

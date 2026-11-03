@@ -1,6 +1,8 @@
 # Thiết kế API, dữ liệu và invariants
 
-Trạng thái: **D12 chọn Cloud Firestore, core P01–P05 đang port qua Admin SDK async; project/credentials chưa có, chưa kiểm chứng cloud read/write**; SQL core và P06–P10 đang có chỉ là reference local, mở rộng cần port và test riêng; các phần mở rộng vẫn là đề xuất theo phase. Tạo và đồng bộ `docs/api/openapi.yaml` và DTO trong `packages/contracts` trước khi BE/FE triển khai khác nhau. Ngày 01/11/2026.
+> 03/11/2026: tài liệu này gồm **quy tắc hiện hành + thiết kế tương lai**. Endpoint chạy thật lấy từ [API hiện hành](api/README.md), OpenAPI và route code; phần Advanced bên dưới chưa triển khai trên Firestore. [Ma trận BE](backend/requirements.md) chỉ rõ gap theo Fxx. Cloud D20 không có demo/seed; kiểm thử giả lập chỉ explicit emulator.
+
+Trạng thái 02/11/2026: **D12 chọn Cloud Firestore; project/credential đã cấu hình theo D13. `firestore:check`, explicit create-only seed và bounded HTTP A/B/C smoke đã pass trên cloud.** Source SQL cũ đã gỡ khỏi cây active; P06–P10 vẫn là roadmap, mở rộng cần port và test riêng; các phần mở rộng vẫn là đề xuất theo phase. Tạo và đồng bộ `docs/api/openapi.yaml` và DTO trong `packages/contracts` trước khi BE/FE triển khai khác nhau. Xem [evidence cloud setup](qa/cloud-setup-2026-11-02.md) để biết scope và limits.
 
 ## 1. Quy ước chung
 
@@ -44,13 +46,13 @@ Mỗi dòng nhóm endpoint phải được tách request/response schema và l�
 | Nhóm | Endpoint đề xuất | F / rule | Ưu tiên |
 |---|---|---|---|
 | System | `GET /health`, `GET /v1/capabilities` | mode, version, DB ready | Core |
-| Auth | `POST /v1/auth/otp/request`, `/otp/verify`; `POST /v1/auth/oauth/:provider`; `POST /v1/auth/logout`; `GET /v1/me` | F01, rate-limit, challenge expiry, revoke | Core; OAuth free chờ config |
-| Demo login | `POST /v1/demo/sessions` | Demo mode + user fixture allowlist; không chấp nhận userId tùy ý ở live | Core |
+| Auth | `GET /v1/auth/methods`, `/v1/auth/google/config`; `POST /v1/auth/firebase` body `{idToken}`; `POST /v1/auth/logout`; `GET /v1/me` | F01, Firebase Admin verify ID token checkRevoked, stable UID identity, opaque session | Firebase SDK current; [contract](firebase-auth.md) |
+| Demo login | `POST /v1/demo/sessions` | Demo mode + user fixture allowlist; không chấp nhận userId tùy ý ở live; D15 đã bỏ nút này khỏi app | BE test tooling |
 | Profile | `GET/PATCH /v1/me/profile`, `GET /v1/profiles/:id` | F03–05; server validate enum, đủ 18+, exposure policy | Core |
 | Media | `POST /v1/me/media`; `PATCH /v1/me/media/order`; `DELETE /v1/me/media/:id`; `GET /v1/media/:id/content` | F03; multipart, tổng 9 media, private object access | Core ảnh; video theo timebox |
 | Verification | `POST /v1/me/verification/selfie`; `GET /v1/me/verification`; `POST /v1/me/verification/phone` | F02,11; real/demo tách; selfie không tự cấp blue tick thật | Core workflow demo / mở rộng real |
 | Discovery | `GET/PATCH /v1/me/preferences`; `GET /v1/discovery` | F06,13,32,33; filter, giới hạn quyền, không lộ GPS | Core basic |
-| Vị trí riêng | `PUT /v1/me/location` body `{latitude,longitude,consent:true}`; `DELETE /v1/me/location` | F06; validate tọa độ, thời gian server, chỉ chủ tài khoản; không trả tọa độ trong public profile | Core nếu GPS được chọn |
+| Vị trí riêng | `GET /v1/me/location` trả `{hasLocation,updatedAt}`; `PUT /v1/me/location` body `{latitude,longitude,consent:true}`; `DELETE /v1/me/location` | F06; GET chỉ trạng thái/thời gian vị trí của chính session, không trả tọa độ; PUT validate tọa độ và thời gian server; không trả tọa độ trong public profile | Core nếu GPS được chọn |
 | Swipe | `POST /v1/swipes` body `{targetUserId,action,gateAnswer?}` | F07,16; `like/pass`, không tự like/self, atomic pair match | Core |
 | Matches | `GET /v1/matches`; `DELETE /v1/matches/:id` body optional reason code | F07,08,24; revoke chat/socket ngay | Core |
 | Messages | `GET/POST /v1/matches/:id/messages`; `POST /v1/matches/:id/read` | F09,10; text/GIF/sticker/location, retry unique | Core text; rich media incremental |
@@ -70,7 +72,11 @@ Mỗi dòng nhóm endpoint phải được tách request/response schema và l�
 
 F12 biometric là thao tác OS mở khóa credential đã có, không có route `/biometric-login` nhận boolean từ client. Server vẫn xác minh session còn hạn. Đề xuất core ngày đầu: opaque session 24h, revoke khi logout, hết hạn phải đăng nhập lại; chưa thêm refresh endpoint. Nếu cần refresh về sau phải bổ sung rotation/replay contract và test trước khi dùng, không hứa mở app không cần OTP nếu phiên hết hạn.
 
+PATCH hồ sơ gộp các mục `lifestyle` được gửi với dữ liệu hiện tại; sửa `smoking` không xóa `drinking`/`zodiac`. Bỏ qua một khóa giữ nguyên giá trị đó; gửi `null` cho từng khóa `smoking`, `drinking` hoặc `zodiac` sẽ xóa riêng khóa đó. Ví dụ `{ "lifestyle": { "smoking": null, "zodiac": null } }` xóa hai mục này, giữ `drinking`; response/read-back bỏ khóa đã xóa, không trả `null`. Enum/chuỗi không hợp lệ vẫn bị từ chối trước khi ghi. Tương tự `advanced`: field bỏ qua được giữ nguyên, field nullable gửi `null` được xóa giá trị. Auth sản phẩm hiện hành D17: Firebase SDK email/Google → Firebase ID token → `POST /v1/auth/firebase` → opaque API session; ánh xạ UID và tạo user/profile/preferences trong transaction. Không link bằng email hoặc tin userId client. Custom `/register`, `/login`, `/google`, `/google/challenge` trả 410. OTP/demo chỉ dùng BE test trên explicit emulator; cloud trả unavailable. Xem [Firebase Auth contract](firebase-auth.md).
+
 ## 3. Realtime contract core
+
+D20: `match:created` chỉ chứa `{matchId}`, gửi cho đúng hai thành viên qua room user do server đặt sau commit. Listener Firestore theo membership phát hiện match tạo ở BE khác; thông báo có thể trùng/lặp lúc reconnect. App debounce rồi GET `/v1/matches`, chỉ subscribe ID trong response được phân quyền. Message vẫn fanout trong một BE, chưa có broker fanout nhiều BE.
 
 1. Client handshake bằng session token, server xác thực; join room sau kiểm tra membership trên server.
 2. `match:subscribe` `{matchId}` → ack `{ok:true}` hoặc error code; client không được tự đặt room/user.
@@ -89,6 +95,8 @@ D12: dùng Firebase Admin SDK async ở BE, không Firestore client trực tiế
 |---|---|
 | `users/{userId}` | UUID, account status, createdAt; không trả thông tin phone/private cho người khác |
 | `sessions/{hashToken}` | userId, expiresAt, revokedAt; không lưu raw token |
+| `googleChallenges/{id}` | nonceHash, expiresAt, consumedAt; challenge 5 phút, transaction dùng một lần |
+| `oauthIdentities/{sha256("google:"+sub)}` | provider, subject, userId, createdAt; unique provider/sub, không tự link qua email |
 | `otp_challenges/{id}` + phone index/rate-limit documents | code hash, expiry, attempts/consumed; hash phone làm index ID, verify + link phone atomic, không query rồi ghi để giả unique |
 | `profiles/{userId}` | displayName, dateOfBirth, gender, bio, datingGoal, lifestyle, visibility, completedAt; 18+ và enum/null validation |
 | `profile_media/{mediaId}` | userId, kind, storageKey, position, status; quota 9/reservation transaction; file vẫn filesystem BE có auth |
@@ -117,7 +125,7 @@ Client rules deny all; Admin SDK bỏ qua rules nên quyền nằm tại API. `F
 | P09 AI/explore | `ai_sessions`, `ai_messages`, `explore_topics`, `profile_topics` | consent, quota, timeout; chỉ gửi dữ liệu tối thiểu cho provider |
 | P10 gói/lịch | `entitlements`, `demo_purchases`, `boosts`, `super_likes`, `calendar_links` | không grant qua boolean client; expiry dùng server clock; purchase retry không cấp đôi |
 
-SQL modules P06–P10 hiện có chưa được xem là Firestore complete; các collection trên là kế hoạch port, không tự bật route fallback SQL trong cloud mode. Không tạo tất cả collection ở ngày đầu. Không lưu dữ liệu biometrics OS hoặc face embedding vào backend chỉ để demo.
+Source SQL P06–P10 cũ đã gỡ; nhóm này chưa triển khai Firestore; các collection trên là kế hoạch port, không tự bật route fallback SQL trong cloud mode. Không tạo tất cả collection ở ngày đầu. Không lưu dữ liệu biometrics OS hoặc face embedding vào backend chỉ để demo.
 
 ## 6. Quy tắc nghiệp vụ cần transaction và quyền
 
@@ -145,3 +153,7 @@ SQL modules P06–P10 hiện có chưa được xem là Firestore complete; các
 | Clone | Máy/thư mục sạch chạy đúng runbook; điện thoại không dùng localhost để gọi máy tính |
 
 Tên test/câu lệnh sẽ được tạo và khóa trong P01. Chỉ tick sau khi có output, không lấy bảng trên làm bằng chứng pass.
+
+Auth T02.01/F01 hiện hành: [Firebase SDK/session contract](firebase-auth.md). [Email sign-in cũ](email-sign-in.md) chỉ giữ lịch sử D16 trước D17; không dùng làm hướng dẫn implementation. Chưa có email verification/reset UI, không tự link bằng email.
+
+D17 thay custom email/direct Google bằng Firebase Auth SDK; dữ liệu legacy giữ nguyên, không tự migrate/link bằng email.

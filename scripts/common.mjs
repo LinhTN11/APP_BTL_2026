@@ -44,7 +44,7 @@ export function environment() {
     env.JAVA_HOME = bundledJdk;
   env.PORT ||= "3000";
   env.HOST ||= "0.0.0.0";
-  env.DEMO_MODE ||= "true";
+  env.DEMO_MODE ||= "false";
   env.DATA_DIR ||= join(root, "data");
   env.DATABASE_MODE ||= "firestore";
   env.FIRESTORE_NAMESPACE ||= "app-cuoi-ky";
@@ -52,6 +52,10 @@ export function environment() {
 }
 
 export function firestoreConfiguration(env) {
+  if (env.NODE_ENV === "production" && (env.DATABASE_MODE === "firestore-emulator" || env.FIRESTORE_EMULATOR_HOST || env.FIREBASE_AUTH_EMULATOR_HOST || env.DEMO_MODE === "true" || env.FIRESTORE_SEED_DEMO === "true"))
+    throw new Error("Production rejects emulator, demo and seed configuration.");
+  if (env.DATABASE_MODE !== "firestore-emulator" && (env.DEMO_MODE === "true" || env.FIRESTORE_SEED_DEMO === "true"))
+    throw new Error("Demo and seed require explicit firestore-emulator mode.");
   if (!["firestore", "firestore-emulator"].includes(env.DATABASE_MODE))
     throw new Error(
       "DATABASE_MODE must be firestore or explicit firestore-emulator; no SQLite fallback."

@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { writeFile, unlink, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { FirestoreContext, fail, uid } from "./context.js";
-import { object, uuid } from "./schemas.js";
+import { object, uuid } from "../schemas.js";
 import { pairDocumentId, requireTransactionSession } from "./matching.js";
 
 async function image(req: FastifyRequest) {
@@ -156,7 +156,7 @@ export function registerFirestoreMedia(
     async (req, reply) => {
       const m = await ctx.db.runTransaction(async (tx) => {
         const media = (await tx.get(ctx.ref("media", req.params.id))).data();
-        if (!media || media.scope !== "profile")
+        if (!media || media.scope !== "profile" || (!ctx.config.demoMode && media.mode === "demo"))
           return fail(404, "NOT_FOUND", "Không tìm thấy ảnh");
         if (media.userId !== req.actor) {
           const pair = pairDocumentId(req.actor, media.userId);
@@ -169,7 +169,7 @@ export function registerFirestoreMedia(
           );
           const profile = p.data();
           if (
-            user.data()?.accountStatus !== "active" ||
+            !ctx.availableUser(user.data()) ||
             !profile ||
             profile.visibility !== "public" ||
             b1.exists ||
@@ -228,6 +228,7 @@ export function registerFirestoreMedia(
     return { data: { status: "pending", mode: "demo", submittedAt } };
   });
   app.get("/v1/me/verification", async (req) => {
+    if (!ctx.config.demoMode) fail(503, "PROVIDER_UNAVAILABLE", "Selfie provider unavailable");
     const p = (await ctx.ref("profiles", req.actor).get()).data();
     return {
       data: p?.verification ?? { status: "not_submitted", mode: "demo" },

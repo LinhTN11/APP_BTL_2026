@@ -11,6 +11,14 @@ import {
   isPortAvailable,
 } from "./common.mjs";
 
+const apiOnly = process.argv.includes("--api-only");
+const mobileOnly = process.argv.includes("--mobile-only");
+if (apiOnly && mobileOnly) {
+  console.error("Chọn một chế độ: BE, FE hoặc demo chung.");
+  process.exit(1);
+}
+const startApi = !mobileOnly;
+const startMobile = !apiOnly;
 const setup = spawnSync(
   process.execPath,
   [join(root, "scripts", "setup.mjs")],
@@ -18,13 +26,15 @@ const setup = spawnSync(
 );
 if (setup.status !== 0) process.exit(setup.status || 1);
 const env = environment();
-try {
-  firestoreConfiguration(env);
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
+if (startApi) {
+  try {
+    firestoreConfiguration(env);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }
-for (const port of [Number(env.PORT), 8081]) {
+for (const port of [startApi && Number(env.PORT), startMobile && 8081].filter(Boolean)) {
   const host =
     port === Number(env.PORT) && env.HOST !== "0.0.0.0"
       ? env.HOST
@@ -37,20 +47,15 @@ for (const port of [Number(env.PORT), 8081]) {
     process.exit(1);
   }
 }
-console.log(
-  `API: http://127.0.0.1:${env.PORT} (emulator: http://10.0.2.2:${env.PORT})`
-);
-console.log(
-  `LAN: ${lanAddresses()
-    .map((x) => `http://${x}:${env.PORT}`)
-    .join(", ")}`
-);
-console.log(
-  "DEMO auth/providers are labeled. No SMS/payment sent. Ctrl+C stops this demo process tree."
-);
-console.log(
-  `DB provider: Firestore; mode: ${env.DATABASE_MODE}; project: ${env.FIREBASE_PROJECT_ID}; namespace: ${env.FIRESTORE_NAMESPACE}`
-);
+if (startApi) {
+  console.log(`API: http://127.0.0.1:${env.PORT} (emulator: http://10.0.2.2:${env.PORT})`);
+  console.log(`Swagger: http://127.0.0.1:${env.PORT}/docs`);
+  console.log(`LAN: ${lanAddresses().map((x) => `http://${x}:${env.PORT}`).join(", ")}`);
+  console.log(`DB: Firestore; ${env.DATABASE_MODE}; project: ${env.FIREBASE_PROJECT_ID}; namespace: ${env.FIRESTORE_NAMESPACE}`);
+}
+if (startMobile) console.log("Metro: http://127.0.0.1:8081. Nhập URL API của BE trong mục Kết nối API trên màn đăng nhập.");
+if (mobileOnly) console.log("FE dùng API chung: không cần Firebase config hoặc file secret.");
+console.log(`Runtime: ${env.DEMO_MODE === "true" ? "explicit emulator demo" : "real data; demo providers disabled"}. Ctrl+C dừng các tiến trình do lệnh này tạo.`);
 const children = [];
 let stopping = false;
 async function stop(code = 0) {
@@ -61,10 +66,10 @@ async function stop(code = 0) {
 }
 process.once("SIGINT", () => void stop());
 process.once("SIGTERM", () => void stop());
-for (const args of [
-  ["run", "dev:api"],
-  ["run", "dev:mobile"],
-]) {
+const commands = [];
+if (startApi) commands.push(["run", "dev", "--workspace", "@gap/api"]);
+if (startMobile) commands.push(["run", "dev:mobile"]);
+for (const args of commands) {
   const child = spawnNpm(args, { env });
   children.push(child);
   child.once("error", (error) => {
@@ -78,11 +83,11 @@ for (const args of [
     }
   });
 }
-if (!process.argv.includes("--no-android")) {
+if (startMobile && !process.argv.includes("--no-android")) {
   if (devices(env).length === 1) {
     // Wait for the API before launching the native build/install lane.
-    let ready = false;
-    for (let attempt = 0; attempt < 60 && !stopping; attempt++) {
+    let ready = !startApi;
+    for (let attempt = 0; !ready && attempt < 60 && !stopping; attempt++) {
       try {
         ready = (
           await fetch(`http://127.0.0.1:${env.PORT}/health`, {
@@ -105,11 +110,11 @@ if (!process.argv.includes("--no-android")) {
     android.once("exit", (code) => {
       if (code)
         console.error(
-          "Android build/install failed. API+Metro remain available; fix toolchain and retry npm run android."
+          "Android build/install failed. Metro remains available; fix toolchain and retry npm run android."
         );
     });
   } else
     console.log(
-      "Start an emulator/connect one USB device, then run npm run android in another terminal. Backend and Metro are running."
+      "Mở một emulator hoặc cắm một máy USB, rồi chạy npm run android ở terminal khác."
     );
 }

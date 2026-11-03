@@ -1,76 +1,50 @@
-# Kết nối Cloud Firestore thật
+# Firestore cloud dùng chung cho BE local
 
-**D12 — người dùng đã chọn Cloud Firestore và chưa có Firebase project (01/11/2026).** React Native Community CLI giữ nguyên; Firestore thay SQLite làm DB chính. Core đã có code và kiểm tra emulator; chưa có project/credentials nên **chưa xác nhận kết nối cloud thật**.
+Cập nhật 03/11/2026. Mỗi thành viên clone repo và chạy BE trên máy mình, nhưng mọi BE phải kết nối **cùng Firebase project `app-cuoi-ky-2d653` và Firestore namespace `app-cuoi-ky`**. Không tạo project/namespace riêng cho FE.
 
-## 1. Chuẩn bị project riêng cho app
+Project và credential hiện có đã được cấu hình theo D13. Cloud Firestore Standard ở `asia-southeast1`, client rules deny-all; các composite index hiện có READY. Chi tiết bằng chứng tại [cloud setup](qa/cloud-setup-2026-11-02.md). Người dùng đã cho phép chuyển bộ cấu hình BE cần thiết qua Zalo cho thành viên nhóm theo flow ở [bàn giao BE → FE](handoff/be-to-fe.md). Mỗi máy giữ bản local bị Git ignore; không cần tự tạo service account hoặc đổi IAM.
 
-1. Mở [Firebase Console](https://console.firebase.google.com/), đăng nhập tài khoản của nhóm và tạo project mới dành riêng cho app này.
-2. Trong **Build → Firestore Database**, tạo database Standard, chọn vị trí phù hợp cho nhóm. Chọn chế độ khóa truy cập client; không mở rules `allow read, write: if true` để chạy nhanh.
-3. Ghi lại **Project ID**. Gửi Project ID qua chat được; đó không phải khóa bí mật. Không tái sử dụng project WebGI hay dữ liệu dự án khác.
-4. Trong **Project settings → Service accounts**, tạo khóa Admin SDK cho backend nếu nhóm dùng credential file. Lưu file ở `secrets/firebase-service-account.json` trên máy BE; thư mục này bị Git ignore. Không gửi nội dung file vào chat, không cho vào app Android hoặc repo. Có thể dùng ADC thay credential file nếu môi trường nhóm đã cấu hình.
-5. Sau khi cài dependencies và xác nhận Project ID, triển khai rules khóa client và composite indexes trong repo vào **đúng project mới**. Lệnh này do chủ project chạy sau khi đăng nhập Firebase CLI; không thực hiện trên project khác:
+## Xuất cấu hình ở máy đã có BE
+
+Tại repo trên máy đã cấu hình đúng, chạy (không cần server đang bật):
 
 ```powershell
-npx firebase login
-npx firebase deploy --only firestore:rules,firestore:indexes --project PROJECT_ID_CUA_NHOM
+npm run team:export
 ```
 
-Chờ indexes ở trạng thái sẵn sàng trước khi thử các truy vấn match/chat. Firestore Emulator không chứng minh indexes đã được tạo trên cloud.
+`team:export` tạo **một tệp** `secrets/team-config.json` gồm danh sách biến được cho phép, service-account hiện tại, project ID và namespace. Chuyển tệp thủ công cho đúng thành viên qua Zalo. Không đưa tệp vào repo, app hoặc log.
 
-Tài liệu chính: [Firestore quickstart](https://firebase.google.com/docs/firestore/quickstart), [Admin SDK setup](https://firebase.google.com/docs/admin/setup). Firestore có quota không tính phí; cần theo dõi giới hạn đọc/ghi/lưu trữ trong [usage limits](https://firebase.google.com/docs/firestore/quotas). Không tự nâng gói hoặc bật dịch vụ trả phí để hoàn tất demo.
+## Nhập cấu hình ở mỗi máy FE
 
-## 2. Cấu hình backend
-
-Trong `.env.local` (không commit):
-
-```dotenv
-DATABASE_MODE=firestore
-FIREBASE_PROJECT_ID=project-id-cua-nhom
-FIRESTORE_NAMESPACE=app-cuoi-ky
-GOOGLE_APPLICATION_CREDENTIALS=C:/duong-dan-tuyet-doi/secrets/firebase-service-account.json
-DEMO_MODE=true
-HOST=0.0.0.0
-PORT=3000
-```
-
-Không đặt `FIRESTORE_EMULATOR_HOST` khi kiểm tra cloud. Backend phải báo thiếu config hoặc lỗi quyền rõ ràng, **không tự đổi sang SQLite hay emulator**.
-
-Với thư mục hiện tại, nếu bạn lưu khóa theo tên gợi ý thì đường dẫn là `C:/Users/trann/Desktop/APP-Cuoi-Ky/secrets/firebase-service-account.json`. Khóa này không được tạo tự động. Trong Firestore Console, dữ liệu của namespace mặc định nằm dưới collection `projects` → document `app-cuoi-ky` → các collection con như `profiles`, `matches`, `messages`.
-
-Khi code chuyển đổi đã được kiểm chứng, chạy:
+Đặt file nhận từ Zalo tại `PROJECT_ROOT/secrets/team-config.json` trong bản clone.
 
 ```powershell
 npm ci
+npm run team:setup
 npm run firestore:check
-npm run firestore:seed
 npm run demo
 ```
 
-`firestore:check` chỉ kiểm tra quyền đọc/kết nối. `firestore:seed` tạo fixture hư cấu A/B/C/D trong namespace đã chọn, không reset hoặc ghi đè dữ liệu có sẵn. Các script đã có; lane emulator đã kiểm tra, lane cloud vẫn cần project/credentials thật. Xem bằng chứng trong [QA](qa/verification.md).
+`team:setup` dùng file tại đường dẫn ổn định trên làm mặc định; có thể dùng `npm run team:setup -- --file <đường-dẫn-khác>` để chọn file khác. Lệnh tạo/cập nhật `.env.local` và trích service account thành `PROJECT_ROOT/secrets/team-firebase-service-account.json`; đường dẫn tuyệt đối được tính lại theo máy nhận để API tìm đúng file kể cả khi process chạy từ `apps/api`. Không sửa tay đường dẫn credential. Script giữ cấu hình máy không liên quan và từ chối project/namespace khác hoặc cờ emulator. Chạy `npm run be` nếu chỉ cần API.
 
-## 3. Cách FE chạy và test chung
+`npm run firestore:check` là kiểm tra đọc, không ghi/xóa document. Nếu project/namespace, credential hoặc chế độ emulator không đúng, dừng và lấy lại tệp từ máy nguồn; không tự đổi project ID để làm lệnh chạy tiếp.
 
-- FE chạy app CLI và trỏ URL API tới máy BE hoặc backend dùng chung. FE **không cần** khóa Admin SDK.
-- Người chạy backend khác cần được cấp quyền/credential riêng hợp lệ; không chia sẻ khóa trong Git để đổi lấy “clone chạy ngay”.
-- App không đọc Firestore trực tiếp. Backend kiểm tra session, ownership, match/block và transaction trước khi đọc/ghi.
-- Media ảnh hiện phục vụ qua API và filesystem BE có auth. **DB cloud không đồng nghĩa ảnh đã lưu cloud**. Storage provider là hạng mục riêng; không nhét ảnh lớn vào Firestore document.
+## Dữ liệu và giới hạn giữa nhiều BE local
 
-## 4. Emulator là một lane kiểm thử riêng
+- Cloud Firestore chứa các collection dưới `projects/{FIRESTORE_NAMESPACE}`; Auth dùng cùng Firebase project. Account, profile, preferences, match và message của nhóm lưu ở DB chung. Ghi qua một máy sẽ hiện khi máy khác tải lại dữ liệu từ DB.
+- Test nhóm dùng account/dữ liệu thật của project chung; các thay đổi qua app/API được chia sẻ. Không chạy seed/reset lên DB này.
+- Ảnh/media bytes hiện lưu trên filesystem của từng BE local; metadata nằm trong Firestore. Ảnh tải lên từ máy này không tự đồng bộ bytes sang máy BE khác, dù dùng chung DB.
+- `message:created` được phát bởi tiến trình API đã nhận tin; chưa có fanout nội dung chat giữa các BE local. Một số event vòng đời như `match:created`/`match:ended` có listener Firestore, nhưng không có nghĩa mọi socket event được chia sẻ. REST reload đọc dữ liệu đã commit từ DB chung.
+- `npm run demo:emulator` và `npm run test:firestore` là emulator explicit, project test riêng; không phải DB nhóm và không thay cho `firestore:check`.
 
-Firestore Emulator dùng SDK và giao thức Firestore để kiểm tra transaction/permissions logic mà không đụng cloud. Chạy emulator **không** là bằng chứng dữ liệu đã lên Firebase project.
+## Nếu phải thay đổi project hoặc quyền
 
-```powershell
-npm run test:firestore
-```
+Không tạo project riêng cho từng thành viên. Nếu nhóm cần đổi project/namespace hoặc thêm quyền backend, chủ project cần quyết định và cấu hình đúng nơi trước; các máy nhận file mới cùng dùng đúng một cặp giá trị. Cấu hình hiện tại dùng Firestore Standard và client rules deny-all; app truy cập nghiệp vụ qua API/Admin SDK. Không cần `google-services.json` để app gọi Firestore trực tiếp vì app không dùng Firestore client SDK.
 
-Test dùng project ID demo và namespace tạm, không dùng credential cloud. `npm run demo:emulator` đã có để chạy app thử có nhãn emulator; không đổi tên thành cloud thật trong báo cáo. Bộ kiểm tra cuối gồm 15 bài Firestore (0 bỏ qua) và 20 bài mobile; xem [báo cáo](qa/final-report.md).
+Nếu gặp lỗi quyền cloud, gửi mã lỗi và tên quyền thiếu cho chủ project; không tự mở rộng IAM, nâng gói, bật dịch vụ trả phí hay triển khai rules/indexes.
 
-## 5. Bằng chứng cần có để chốt cloud
+## Git và credential
 
-- Project ID/namespace đúng app, API báo provider Firestore và mode cloud.
-- Đọc kết nối thành công; seed được tạo rõ ràng do người dùng gọi script.
-- A sửa hồ sơ/Like/gửi tin → nhìn thấy document trên console → restart API vẫn đọc lại được.
-- B hoặc máy FE gọi cùng API thấy cùng dữ liệu; C không đọc chat A–B.
-- Không có admin key trong bundle, source, log hoặc Git; client rules deny all.
+`.env.local`, `secrets/`, service-account JSON và private key bị Git ignore/guard. `npm ci` cài hook qua `prepare`; nếu dùng `--ignore-scripts`, cài hook bằng `npm run security:install`. Trước khi commit có thể chạy `npm run security:check` và `npm run test:security`. Xem [bảo vệ credential và team setup](security/secrets.md); không cần đọc nội dung key để kiểm tra guard.
 
-Các mục trên sẽ giữ “chưa kiểm chứng” cho tới khi có project và quyền truy cập phù hợp.
+`team-cloud.json` ở root chỉ chứa project ID/namespace công khai. Export/import đối chiếu file này để không nhận nhầm bundle của DB khác. Muốn đổi DB của cả team phải cập nhật quyết định và manifest trước, không tự sửa ID trong bundle.

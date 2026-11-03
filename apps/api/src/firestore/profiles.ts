@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { FirestoreContext, fail } from "./context.js";
-import { object, profilePatch, preferencesPatch, coords } from "./schemas.js";
+import { object, profilePatch, preferencesPatch, coords } from "../schemas.js";
 import { defaultPreferences } from "./auth.js";
 import { requireTransactionSession } from "./matching.js";
 
@@ -52,7 +52,6 @@ export async function firestoreProfile(
       : { status: "not_submitted", mode: "demo" },
   };
 }
-export const profile = firestoreProfile;
 export async function prefs(ctx: FirestoreContext, id: string) {
   return (
     (await ctx.ref("preferences", id).get()).data() ?? defaultPreferences()
@@ -97,6 +96,15 @@ export function registerFirestoreProfiles(
         if (!p) return fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
         const changes = {
           ...body,
+          ...(body.lifestyle
+            ? {
+                lifestyle: Object.fromEntries(
+                  Object.entries({ ...p.lifestyle, ...body.lifestyle }).filter(
+                    ([, value]) => value !== null
+                  )
+                ),
+              }
+            : {}),
           ...(body.advanced
             ? { advanced: { ...p.advanced, ...body.advanced } }
             : {}),
@@ -150,6 +158,24 @@ export function registerFirestoreProfiles(
         return p;
       });
       return { data };
+    }
+  );
+  app.get(
+    "/v1/me/location",
+    { schema: { querystring: object({}) } },
+    async (req) => {
+      const location = (await ctx.ref("locations", req.actor).get()).data();
+      const hasLocation = location?.consent === true;
+      // PUT stores ctx.date().toISOString(); malformed legacy values stay unknown.
+      const updatedAt =
+        hasLocation &&
+        typeof location.updatedAt === "string" &&
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(location.updatedAt) &&
+        Number.isFinite(Date.parse(location.updatedAt)) &&
+        new Date(location.updatedAt).toISOString() === location.updatedAt
+          ? location.updatedAt
+          : null;
+      return { data: { hasLocation, updatedAt } };
     }
   );
   app.put(

@@ -1,5 +1,7 @@
 # Kế hoạch triển khai app hẹn hò
 
+> 03/11/2026: đây là roadmap chi tiết giữ ID Txx và dependency, **không là danh sách code đã tồn tại**. Coding BE bắt đầu ở [hướng dẫn gọn](backend/README.md) và [ma trận/gap hiện tại](backend/requirements.md). Timebox 01/11 bên dưới là lịch sử. Các đường dẫn `src/modules/*`, tên test và lệnh test phần mở rộng là dự kiến; khi giao task phải chọn tên `src/firestore/*` cụ thể và test thật. Không truyền đối số test cho `npm run test:api` như thể wrapper hiện có hỗ trợ chọn file.
+
 > **Cho AI và người triển khai:** đọc [yêu cầu sản phẩm](01-yeu-cau-san-pham.md), [UI/UX](02-yeu-cau-ui-ux.md), [kỹ thuật](03-yeu-cau-ky-thuat.md) và [quy tắc subagent](06-quy-tac-ai-va-subagent.md) trước khi nhận task. Khi thực thi, dùng skill `subagent-driven-development` hoặc `executing-plans` nếu có; các rule của dự án và chỉ dẫn hiện tại của người dùng được ưu tiên.
 
 **Mục tiêu:** hoàn thành demo React Native có backend dùng thật trong demo, có thể chia sẻ mã nguồn và chạy lại từ bản clone sạch; đồng thời giữ lộ trình đầy đủ cho cả 37 chức năng trong tài liệu nguồn.
@@ -10,7 +12,7 @@
 
 **Spec:** `docs/01-yeu-cau-san-pham.md`; nguồn đối chiếu: `docs/source/yeu-cau-goc.md`.
 
-**Ngày:** 01/11/2026, múi giờ Asia/Saigon. **Trạng thái:** D12 đang chuyển core P01–P05 sang Firestore; chưa có project/credentials, chưa kiểm chứng đọc/ghi cloud. SQL core/extensions giữ làm reference local; P06–P10 chưa port không được nhận là Firestore hoàn chỉnh; RN Community CLI đã chốt theo D10, visual FE-product chưa được duyệt. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
+**Cập nhật trạng thái:** 02/11/2026, Asia/Saigon. D12 chọn Firestore; project/credential đã cấu hình và `firestore:check` + explicit seed đã đạt. Bounded cloud HTTP smoke A/B/C cũng pass; native cloud đã kiểm API process restart và socket trên một emulator; còn hai thiết bị Android, full permissions/accessibility và FE-product. Xem [evidence cloud setup](qa/cloud-setup-2026-11-02.md). Source SQL cũ đã gỡ, lịch sử Git giữ lại; P06–P10 chưa port không được nhận là Firestore hoàn chỉnh; RN Community CLI đã chốt theo D10, visual FE-product chưa được duyệt. Checkbox chỉ được đánh dấu khi có sản phẩm và bằng chứng tương ứng.
 
 **Nguồn lực đã được chủ dự án chốt:** Android là nền tảng chính; một người BE cần hoàn thành phần được ưu tiên trong hôm nay 01/11/2026, một người FE có một ngày làm riêng. Dịch vụ miễn phí ưu tiên tích hợp thật; dịch vụ trả phí dùng mô phỏng. [Kế hoạch một ngày](11-ke-hoach-mot-ngay.md) quyết định thứ tự/timebox cho bản demo; roadmap này giữ đầy đủ các phase và không cam kết hoàn thành 37 chức năng trong một ngày.
 
@@ -48,30 +50,21 @@ L/M/H mô tả độ khó để chọn agent có chi phí phù hợp, không g�
 ## 3. Cấu trúc file mục tiêu
 
 ```text
-apps/
-  api/
-    src/app.ts                       # Tạo Fastify instance, không tự listen khi test
-    src/server.ts                    # Khởi động server
-    src/config.ts                    # Env và chế độ demo/provider
-    src/firestore/{app,context,auth,profiles,media,seed,matching,chat,safety}.ts
-    src/db/                         # SQL reference cũ; không DB chính
-    src/modules/{auth,profiles,media,discovery,matches,chat,safety,
-                 identity,preferences,personality,music,icebreakers,
-                 dates,venues,assistant,explore,billing,calendar}/
-    src/providers/{demo,real}/        # Adapter theo capability; không nhét SDK vào route
-    test/{auth,profiles,media,discovery,matches,chat,safety,
-          identity,preferences,personality,music,icebreakers,
-          dates,venues,assistant,explore,billing,calendar}/
-  mobile/
-    android/, ios/                   # Native projects Community CLI
-    App.tsx, index.js, metro.config.js
-    src/{api,components,features,navigation,theme}/
-    src/features/dev-tools/           # FE-test; chỉ bật trong demo/dev
-    test/                            # Component và flow quan trọng
-packages/contracts/src/              # Schema request/response/event dùng chung
-scripts/{setup.mjs,dev.mjs,doctor.mjs,smoke-demo.mjs}
-data/                                # DB + media local, bị Git ignore
-docs/{api,qa,handoff}/                # Contract, evidence và hướng dẫn nhóm
+apps/api/src/
+  server.ts                         # Listen; chỉ Firestore
+  shared.ts, schemas.ts             # Errors/hash/id, JSON validation
+  firestore/{app,context,auth,profiles,media,seed,matching,chat,safety}.ts
+apps/api/test/firestore-*.test.ts    # Core integration + quyền/race trên emulator
+apps/mobile/
+  android/, ios/, App.tsx
+  src/{api,session,chat,location,ui}.ts(x)
+  src/screens/{Login,MyProfile,Discover,Chat,Safety}.tsx
+  __tests__/
+packages/contracts/src/index.ts      # DTO chung
+scripts/                            # setup, BE/FE/demo, doctor, Firestore test
+secrets/, .env.local, data/          # Local, không commit
+.local/                             # Notes/API SQL/skill cũ, không commit
+docs/{api,qa,handoff,prototype,source}/
 ```
 
 Các module có thể gộp file nhỏ khi hợp lý; không tạo tầng repository/service/interface chỉ để có nhiều lớp. Tên file chung và bảng DB chỉ Integrator được sửa trong cùng một wave.
@@ -168,7 +161,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 
 **Owner:** BE-Core/Integrator, H. **Phụ thuộc:** T01.01.
 
-**File:** `apps/api/src/firestore/{context,seed}.ts`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, Firestore emulator tests; SQL cũ được giữ reference.
+**File:** `apps/api/src/firestore/{context,seed}.ts`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, Firestore emulator tests; source SQL cũ đã gỡ, lịch sử Git giữ lại.
 
 **Contract:** Admin SDK async, root `projects/{namespace}` với subcollections theo 08; transaction đọc trước ghi, canonical document/idempotency key thay unique SQL. Client rules deny all; API kiểm membership/owner. Index version trong repo; seed stable IDs create-if-absent, không đè sửa/xóa hoặc match ended.
 
@@ -177,7 +170,7 @@ Các phase mở rộng vẫn có mặt trong kế hoạch kể cả khi hạn n�
 - [ ] Seed các fixture T00.03, media local hợp lệ, hội thoại lịch sử và trạng thái đủ dùng kiểm thử.
 - [ ] Test namespace emulator trống, seed hai lần, transaction rollback/retry, hai instance, restart; không reset cloud hoặc fixture hiện hữu ngầm.
 
-**Kiểm tra dự kiến:** `npm run test:firestore` (emulator riêng). **Chấp nhận:** không nhân đôi user/match/message, quyền và tham chiếu được transaction bảo vệ, restart giữ dữ liệu. Cloud còn cần `firestore:check` + seed gọi rõ + roundtrip thật theo [12](12-ket-noi-firestore.md); chưa có project/credentials nên pending.
+**Kiểm tra dự kiến:** `npm run test:firestore` (emulator riêng). **Chấp nhận:** không nhân đôi user/match/message, quyền và tham chiếu được transaction bảo vệ, restart giữ dữ liệu. Cloud HTTP smoke đã kiểm tra bounded roundtrip, concurrency, access denial/revocation và tái tạo app/SDK trong cùng tiến trình Node; chưa kiểm restart qua process hệ điều hành mới. Xem [evidence](qa/cloud-setup-2026-11-02.md).
 
 ### T01.03 — API runtime, health và kiểm tra chung
 

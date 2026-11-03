@@ -9,11 +9,13 @@ import {
   type FirestoreOptions,
 } from "./context.js";
 import { authenticate, registerFirestoreAuth } from "./auth.js";
+import { googleConfig, firebaseConfig } from "./firebase-auth.js";
 import { registerFirestoreProfiles } from "./profiles.js";
 import { registerFirestoreMedia } from "./media.js";
 import { registerFirestoreMatching } from "./matching.js";
 import { registerFirestoreChat, configureFirestoreSocket } from "./chat.js";
 import { registerFirestoreSafety } from "./safety.js";
+import { registerApiDocs } from "../api-docs.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -35,6 +37,8 @@ export async function createFirestoreApp(options: FirestoreOptions = {}) {
       ? {
           redact: [
             "req.headers.authorization",
+            "req.body.password",
+            "req.body.idToken",
             'req.headers["x-demo-moderator-token"]',
           ],
         }
@@ -93,6 +97,13 @@ export async function createFirestoreApp(options: FirestoreOptions = {}) {
     "/v1/demo/sessions",
     "/v1/auth/otp/request",
     "/v1/auth/otp/verify",
+    "/v1/auth/google/config",
+    "/v1/auth/google/challenge",
+    "/v1/auth/google",
+    "/v1/auth/methods",
+    "/v1/auth/register",
+    "/v1/auth/login",
+    "/v1/auth/firebase",
   ]);
   const rates = new Map<string, { count: number; expiresAt: number }>();
   app.addHook("onRequest", async (req, reply) => {
@@ -109,7 +120,11 @@ export async function createFirestoreApp(options: FirestoreOptions = {}) {
     if (rates.size > 10_000)
       for (const [key, value] of rates)
         if (value.expiresAt <= now) rates.delete(key);
-    if (anonymous.has(req.url.split("?")[0])) return;
+    if (
+      anonymous.has(req.url.split("?")[0]) ||
+      ((req.method === "GET" || req.method === "HEAD") &&
+        req.routeOptions.config.publicDocumentation === true)
+    ) return;
     const session = await authenticate(
       ctx,
       req.headers.authorization?.match(/^Bearer (.+)$/)?.[1]
@@ -143,6 +158,7 @@ export async function createFirestoreApp(options: FirestoreOptions = {}) {
         notice: "Metadata trong Firestore; ảnh chưa lưu cloud storage",
       },
       { name: "location", mode: "real" },
+      { name: "gif-sticker", mode: ctx.config.demoMode ? "demo" : "unavailable", reason: "No real GIF/sticker provider configured" },
       {
         name: "otp",
         mode: ctx.config.demoMode ? "demo" : "unavailable",
@@ -160,18 +176,18 @@ export async function createFirestoreApp(options: FirestoreOptions = {}) {
       },
       {
         name: "oauth",
-        mode: "unavailable",
-        reason: "Chưa có cấu hình provider",
+        ...googleConfig(ctx),
       },
+      { name: "firebase-auth", ...firebaseConfig(ctx) },
       {
         name: "advanced",
         mode: "unavailable",
-        reason:
-          "Các module mở rộng đang chuyển sang Firestore, không tự dùng SQLite",
+        reason: "Các tính năng nâng cao chưa được triển khai trong core Firestore",
       },
     ],
   }));
   try {
+    await registerApiDocs(app);
     registerFirestoreAuth(app, ctx);
     registerFirestoreProfiles(app, ctx);
     registerFirestoreMedia(app, ctx);

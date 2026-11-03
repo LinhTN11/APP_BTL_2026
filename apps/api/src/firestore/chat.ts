@@ -14,7 +14,9 @@ export const catalog = {
   gifs: ["coffee", "hello", "celebrate"],
   stickers: ["heart", "wave", "smile"],
 };
-function messageContent(body: any) {
+function messageContent(body: any, demoMode: boolean) {
+  if (!demoMode && ["gif", "sticker"].includes(body.kind))
+    fail(503, "PROVIDER_UNAVAILABLE", "GIF/sticker provider unavailable");
   if (body.kind === "text") {
     if (
       typeof body.text !== "string" ||
@@ -85,7 +87,10 @@ export function registerFirestoreChat(
   app: FastifyInstance,
   ctx: FirestoreContext
 ) {
-  app.get("/v1/chat/catalog", async () => ({ data: catalog }));
+  app.get("/v1/chat/catalog", async () => {
+    if (!ctx.config.demoMode) fail(503, "PROVIDER_UNAVAILABLE", "GIF/sticker provider unavailable");
+    return { data: catalog };
+  });
   app.get<{ Params: { id: string } }>(
     "/v1/matches/:id/messages",
     async (req) => {
@@ -120,7 +125,7 @@ export function registerFirestoreChat(
     { schema: { body: messageBody } },
     async (req) => {
       const body = req.body as any,
-        content = messageContent(body),
+        content = messageContent(body, ctx.config.demoMode),
         contentKey = JSON.stringify({ kind: body.kind, ...content });
       const key = hash(`${req.actor}:${body.clientMessageId}`),
         messageId = uid();
@@ -246,15 +251,34 @@ export function configureFirestoreSocket(ctx: FirestoreContext) {
     );
     expiry.unref();
     const subscriptions = new Map<string, () => void>();
+    const pendingSubscriptions = new Map<string, number>();
     let closed = false;
+    void socket.join(`user:${socket.data.userId}`);
+    // Membership query observes committed matches from other backend processes.
+    const stopNewMatches = ctx.collection("matches")
+      .where("memberIds", "array-contains", socket.data.userId)
+      .where("status", "==", "active")
+      .orderBy("createdAt").orderBy("id").limitToLast(50)
+      .onSnapshot(snapshot => {
+        for (const change of snapshot.docChanges()) {
+          if (change.type !== "added" || change.doc.data().status !== "active") continue;
+          void (async () => {
+            await authenticate(ctx, socket.data.token);
+            await requireActiveFirestoreMatch(ctx, socket.data.userId, change.doc.id);
+            if (!closed && socket.connected) socket.emit("match:created", { matchId: change.doc.id });
+          })().catch(() => {});
+        }
+      }, () => { socket.disconnect(true); });
     socket.on("disconnect", () => {
       closed = true;
       clearTimeout(expiry);
+      stopNewMatches();
       for (const unsubscribe of subscriptions.values()) unsubscribe();
       subscriptions.clear();
     });
     socket.on("match:subscribe", (body: any, ack: any) => {
       if (typeof ack !== "function") return;
+      let reservedMatchId: string | undefined;
       void (async () => {
         await authenticate(ctx, socket.data.token);
         if (
@@ -264,8 +288,16 @@ export function configureFirestoreSocket(ctx: FirestoreContext) {
           Object.keys(body).some((key) => key !== "matchId")
         )
           fail(400, "VALIDATION_ERROR", "Thiếu matchId hợp lệ");
-        if (!subscriptions.has(body.matchId) && subscriptions.size >= 50)
+        const occupied = new Set([
+          ...subscriptions.keys(),
+          ...pendingSubscriptions.keys(),
+        ]);
+        if (!occupied.has(body.matchId) && occupied.size >= 50)
           fail(429, "SUBSCRIPTION_LIMIT", "Quá nhiều kết nối hội thoại");
+        // Reserve before awaiting membership/room joins: concurrent requests must
+        // count in the same cap, including duplicate requests for one match.
+        reservedMatchId = body.matchId;
+        pendingSubscriptions.set(body.matchId, (pendingSubscriptions.get(body.matchId) ?? 0) + 1);
         await requireActiveFirestoreMatch(
           ctx,
           socket.data.userId,
@@ -326,6 +358,12 @@ export function configureFirestoreSocket(ctx: FirestoreContext) {
           error: { code: error.code ?? "FORBIDDEN", message: error.message },
         });
         if (error.status === 401) socket.disconnect(true);
+      }).finally(() => {
+        if (reservedMatchId !== undefined) {
+          const remaining = (pendingSubscriptions.get(reservedMatchId) ?? 1) - 1;
+          if (remaining) pendingSubscriptions.set(reservedMatchId, remaining);
+          else pendingSubscriptions.delete(reservedMatchId);
+        }
       });
     });
   });

@@ -69,7 +69,7 @@ Trả về: file đổi, kết quả test, mode provider, rủi ro, việc chưa
 
 ## 7. Nguồn và tính di động của skill
 
-Lịch sử: bốn skill MIT từ [expo/skills](https://github.com/expo/skills), commit `05754e71d02abe0d2d7a2fb5259ccac41f5ea59c` (`expo-native-ui`, `expo-ui`, `expo-animation`, `expo-router`) từng được cài khi stack còn là đề xuất. **D10 đã ngừng áp dụng cả bốn cho dự án này**; đã chuyển chúng vào `.agents/archived-skills/<name>/`, ra khỏi `.agents/skills/` active; đây chỉ là provenance lịch sử, không bắt buộc đọc. Không đọc hoặc áp dụng hướng dẫn Expo chỉ vì catalog cũ còn hiện tên. Không coi star count hay ví dụ skill là bằng chứng tương thích RN CLI.
+Lịch sử: bốn skill MIT từ [expo/skills](https://github.com/expo/skills), commit `05754e71d02abe0d2d7a2fb5259ccac41f5ea59c` (`expo-native-ui`, `expo-ui`, `expo-animation`, `expo-router`) từng được cài khi stack còn là đề xuất. **D10 đã ngừng áp dụng cả bốn cho dự án này**; đã gỡ khỏi repo active, giữ local trong ignored `.local/archived-skills/` và lịch sử Git; đây chỉ là provenance lịch sử, không bắt buộc đọc. Không đọc hoặc áp dụng hướng dẫn Expo chỉ vì catalog cũ còn hiện tên. Không coi star count hay ví dụ skill là bằng chứng tương thích RN CLI.
 
 `wireframes-mockups` được sao chép từ skill có sẵn trên máy vào `.agents/skills/wireframes-mockups/SKILL.md`, chuẩn hóa frontmatter `name/description` để dùng như skill cục bộ; nguồn ban đầu không được xác minh giấy phép trong lượt này, giữ nội bộ repo nhóm và kiểm tra quyền trước khi phát hành skill độc lập. Không cần Figma trả phí hay cài thêm công cụ để mở preview SVG/HTML.
 

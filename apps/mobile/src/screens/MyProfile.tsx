@@ -1,20 +1,23 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, BackHandler, Image, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, AppState, BackHandler, Image, StyleSheet, View } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { Api, type Profile } from '../api';
-import { currentLocation } from '../location';
+import { currentLocation, openLocationSettings } from '../location';
+import { AppearancePreference } from '../theme';
 import {
   Button,
+  Choice,
   Feedback,
   Field,
   Label,
   Page,
   Panel,
+  Palette,
   Title,
   useTask,
   confirmAction,
-  s,
 } from '../ui';
+
 async function pickImage() {
   const result = await launchImageLibrary({
     mediaType: 'photo',
@@ -45,26 +48,68 @@ async function pickImage() {
   } as unknown as Blob);
   return form;
 }
+
 export default function MyProfile({
   api,
   onSaved,
   onDirty,
 }: {
   api: Api;
-  onSaved: () => void;
+  onSaved: (profile?: Profile) => void;
   onDirty: (value: boolean) => void;
 }) {
+  const p = React.useContext(Palette);
+  const appearance = React.useContext(AppearancePreference);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [verification, setVerification] = useState('');
   const task = useTask();
+  const dirtyRef = useRef(false);
+  const epoch = useRef(0);
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
+
   const load = useCallback(async () => {
-    setProfile((await api.request<Profile>('/v1/me/profile')).data);
+    const requestEpoch = epoch.current;
+    const result = (await api.request<Profile>('/v1/me/profile')).data;
+    if (requestEpoch !== epoch.current) { return; }
+    setProfile(result);
+    dirtyRef.current = false;
     setDirty(false);
+    onSavedRef.current(result);
   }, [api]);
+
+  const syncMediaOnly = useCallback(async () => {
+    if (!dirtyRef.current) {
+      await load();
+      return;
+    }
+    const requestEpoch = epoch.current;
+    const latest = (await api.request<Profile>('/v1/me/profile')).data;
+    if (requestEpoch !== epoch.current) { return; }
+    setProfile(previous =>
+      previous
+        ? {
+            ...previous,
+            media: latest.media,
+            verification: latest.verification,
+          }
+        : latest,
+    );
+    onSavedRef.current();
+  }, [api, load]);
+
   useEffect(() => {
-    void task.run(load); // eslint-disable-next-line react-hooks/exhaustive-deps
+    setProfile(null);
+    dirtyRef.current = false;
+    setDirty(false);
+    void task.run(load);
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active' && !dirtyRef.current) { void task.run(load); }
+    });
+    return () => { epoch.current += 1; subscription.remove(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
+
   useEffect(() => {
     const back = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!dirty) {
@@ -81,93 +126,185 @@ export default function MyProfile({
     });
     return () => back.remove();
   }, [dirty, load, task]);
+
   useEffect(() => {
     onDirty(dirty);
   }, [dirty, onDirty]);
+
   const edit = (value: Partial<Profile>) => {
     setProfile(previous => (previous ? { ...previous, ...value } : null));
+    epoch.current += 1;
+    dirtyRef.current = true;
     setDirty(true);
   };
+
   return (
     <Page>
-      <Title>Hồ sơ của tôi</Title>
-      <Feedback task={task} />
-      <Button
-        label="Tải lại hồ sơ"
-        disabled={task.busy}
-        onPress={() => {
-          if (dirty) {
-            confirmAction('Bỏ thay đổi?', 'Tải bản đã lưu từ máy chủ.', () => {
+      <View style={styles.headerRow}>
+        <Title>Hồ sơ của tôi</Title>
+        <Button
+          compact
+          label="Tải lại hồ sơ"
+          disabled={task.busy}
+          onPress={() => {
+            if (dirty) {
+              confirmAction('Bỏ thay đổi?', 'Tải bản đã lưu từ máy chủ.', () => {
+                void task.run(load);
+              });
+            } else {
               void task.run(load);
-            });
-          } else {
-            void task.run(load);
-          }
-        }}
-      />
+            }
+          }}
+        />
+      </View>
+
+      <Feedback task={task} />
+
+      {/* Appearance card */}
+      <Panel style={styles.sectionCard}>
+        <Choice
+          label="Giao diện"
+          value={appearance.mode}
+          disabled={!appearance.ready || appearance.saving}
+          options={[
+            ['system', 'Theo thiết bị'],
+            ['light', 'Sáng'],
+            ['dark', 'Tối'],
+          ]}
+          onChange={value => { void appearance.setMode(value as 'system' | 'light' | 'dark'); }}
+        />
+        {!!appearance.error && <Label>{appearance.error}</Label>}
+      </Panel>
+
       {profile && (
         <>
-          <Label muted>
-            {dirty ? 'Có thay đổi chưa lưu.' : 'Đã đọc hồ sơ từ API.'}
-          </Label>
-          {(
-            [
-              ['displayName', 'Tên hiển thị'],
-              ['dateOfBirth', 'Ngày sinh YYYY-MM-DD (18+)'],
-              ['gender', 'Giới tính: male/female/other'],
-              ['bio', 'Giới thiệu'],
-              ['datingGoal', 'Mục đích: relationship/friendship/casual/unsure'],
-            ] as const
-          ).map(([key, label]) => (
+          {/* Missing requirements alert */}
+          {(!profile.displayName.trim() || !profile.bio.trim() || !profile.media.length || profile.age < 18) && (
+            <Panel style={styles.alertCard}>
+              <Label>Để xuất hiện trong Khám phá, hãy hoàn thiện hồ sơ:</Label>
+              {!profile.displayName.trim() && <Label>• Lưu tên hiển thị.</Label>}
+              {profile.age < 18 && <Label>• Lưu ngày sinh hợp lệ, đủ 18 tuổi.</Label>}
+              {!profile.bio.trim() && <Label>• Viết và lưu phần Giới thiệu.</Label>}
+              {!profile.media.length && <Label>• Thêm ít nhất một ảnh hồ sơ.</Label>}
+            </Panel>
+          )}
+
+          <View style={styles.statusPill}>
+            <Label muted>
+              {dirty ? 'Có thay đổi chưa lưu.' : 'Đang hiển thị bản hồ sơ đã tải từ máy chủ.'}
+            </Label>
+          </View>
+
+          {/* Basic Info Section */}
+          <Panel style={styles.sectionCard}>
+            <Title>Thông tin cơ bản</Title>
             <Field
-              key={key}
-              label={label}
-              value={profile[key] ?? ''}
+              label="Tên hiển thị"
+              value={profile.displayName ?? ''}
               editable={!task.busy}
-              multiline={key === 'bio'}
-              onChangeText={value => edit({ [key]: value })}
+              onChangeText={value => edit({ displayName: value })}
             />
-          ))}
-          <Field
-            label="Sở thích (dấu phẩy)"
-            value={profile.interests.join(',')}
-            editable={!task.busy}
-            onChangeText={value =>
-              edit({ interests: value.split(',').map(item => item.trim()) })
-            }
-          />
-          {(['zodiac', 'smoking', 'drinking'] as const).map(key => (
             <Field
-              key={key}
-              label={
-                key === 'zodiac'
-                  ? 'Cung hoàng đạo (tuỳ chọn)'
-                  : `${key}: never/sometimes/often/prefer_not_to_say (tuỳ chọn)`
-              }
-              value={profile.lifestyle?.[key] ?? ''}
+              label="Ngày sinh YYYY-MM-DD (18+)"
+              value={profile.dateOfBirth ?? ''}
+              editable={!task.busy}
+              onChangeText={value => edit({ dateOfBirth: value })}
+            />
+            <Choice
+              label="Giới tính"
+              value={profile.gender}
+              disabled={task.busy}
+              options={[
+                ['male', 'Nam'],
+                ['female', 'Nữ'],
+                ['other', 'Khác'],
+              ]}
+              onChange={value => edit({ gender: value })}
+            />
+            <Choice
+              label="Bạn đang tìm kiếm"
+              value={profile.datingGoal}
+              disabled={task.busy}
+              options={[
+                ['relationship', 'Mối quan hệ lâu dài'],
+                ['friendship', 'Tình bạn'],
+                ['casual', 'Tìm hiểu nhẹ nhàng'],
+                ['unsure', 'Chưa xác định'],
+              ]}
+              onChange={value => edit({ datingGoal: value })}
+            />
+          </Panel>
+
+          {/* Bio Section */}
+          <Panel style={styles.sectionCard}>
+            <Title>Giới thiệu bản thân</Title>
+            <Field
+              label="Giới thiệu"
+              value={profile.bio ?? ''}
+              editable={!task.busy}
+              multiline
+              onChangeText={value => edit({ bio: value })}
+            />
+          </Panel>
+
+          {/* Lifestyle and Interests Section */}
+          <Panel style={styles.sectionCard}>
+            <Title>Sở thích & Lối sống</Title>
+            <Field
+              label="Sở thích (dấu phẩy)"
+              value={profile.interests.join(',')}
               editable={!task.busy}
               onChangeText={value =>
-                edit({ lifestyle: { ...profile.lifestyle, [key]: value } })
+                edit({ interests: value.split(',').map(item => item.trim()) })
               }
             />
-          ))}
-          <Button
-            label="Lưu hồ sơ"
-            primary
-            disabled={task.busy || !dirty}
-            onPress={() =>
-              task.run(async () => {
-                const {
-                  displayName,
-                  dateOfBirth,
-                  gender,
-                  bio,
-                  datingGoal,
-                  interests,
-                  lifestyle,
-                } = profile;
-                setProfile(
-                  (
+            <Field
+              label="Cung hoàng đạo (tuỳ chọn)"
+              value={profile.lifestyle?.zodiac ?? ''}
+              editable={!task.busy}
+              onChangeText={value =>
+                edit({ lifestyle: { ...profile.lifestyle, zodiac: value } })
+              }
+            />
+            {(['smoking', 'drinking'] as const).map(key => (
+              <Choice
+                key={key}
+                label={key === 'smoking' ? 'Hút thuốc' : 'Uống rượu bia'}
+                value={profile.lifestyle?.[key] ?? ''}
+                disabled={task.busy}
+                options={[
+                  ['', 'Chưa chọn'],
+                  ['never', 'Không'],
+                  ['sometimes', 'Thỉnh thoảng'],
+                  ['often', 'Thường xuyên'],
+                  ['prefer_not_to_say', 'Không chia sẻ'],
+                ]}
+                onChange={value =>
+                  edit({ lifestyle: { ...profile.lifestyle, [key]: value } })
+                }
+              />
+            ))}
+          </Panel>
+
+          {/* Save Button */}
+          <View style={styles.saveWrap}>
+            <Button
+              label="Lưu hồ sơ"
+              primary
+              disabled={task.busy || !dirty}
+              onPress={() =>
+                task.run(async () => {
+                  const requestEpoch = epoch.current;
+                  const {
+                    displayName,
+                    dateOfBirth,
+                    gender,
+                    bio,
+                    datingGoal,
+                    interests,
+                    lifestyle,
+                  } = profile;
+                  const savedProfile = (
                     await api.request<Profile>('/v1/me/profile', 'PATCH', {
                       displayName,
                       dateOfBirth,
@@ -176,180 +313,197 @@ export default function MyProfile({
                       datingGoal,
                       interests: interests.filter(Boolean),
                       lifestyle: Object.fromEntries(
-                        Object.entries(lifestyle ?? {}).filter(([, value]) =>
-                          value?.trim(),
-                        ),
+                        Object.entries(lifestyle ?? {}).map(([key, value]) => [
+                          key,
+                          value?.trim() || null,
+                        ]),
                       ),
                     })
-                  ).data,
-                );
-                setDirty(false);
-                onSaved();
-                task.setNotice('Đã lưu hồ sơ trên máy chủ.');
-              })
-            }
-          />
-          <Panel>
-            <Title>{`Media (${profile.media.length}/9)`}</Title>
+                  ).data;
+                  if (requestEpoch !== epoch.current) { return; }
+                  setProfile(savedProfile);
+                  dirtyRef.current = false;
+                  setDirty(false);
+                  onSaved(savedProfile);
+                  task.setNotice('Đã lưu hồ sơ trên máy chủ.');
+                })
+              }
+            />
+          </View>
+
+          {/* Media Section */}
+          <Panel style={styles.sectionCard}>
+            <Title>{`Ảnh của bạn (${profile.media.length}/9)`}</Title>
             <Label muted>
-              Ảnh thật qua bộ chọn hệ thống; UI-test chưa có form video. Lưu hồ
-              sơ trước khi sửa media.
+              Thêm tối đa 9 ảnh để mọi người hiểu hơn về bạn.
             </Label>
-            {profile.media.map((media, index) => (
-              <View key={media.id}>
-                {media.kind === 'image' && (
-                  <Image
-                    source={api.mediaSource(media.url)}
-                    accessibilityLabel={`Ảnh ${index + 1}`}
-                    style={s.thumbnail}
-                  />
-                )}
-                <Button
-                  label={`Xoá media ${index + 1}`}
-                  disabled={task.busy || dirty}
-                  onPress={() =>
-                    confirmAction('Xoá ảnh?', 'Ảnh sẽ xoá khỏi hồ sơ.', () => {
-                      void task.run(async () => {
-                        await api.request(`/v1/me/media/${media.id}`, 'DELETE');
-                        await load();
-                        onSaved();
-                      });
-                    })
-                  }
-                />
-                {index > 0 && (
-                  <Button
-                    label={`Đưa ảnh ${index + 1} lên đầu`}
-                    disabled={task.busy || dirty}
-                    onPress={() =>
-                      task.run(async () => {
-                        await api.request('/v1/me/media/order', 'PATCH', {
-                          mediaIds: [
-                            media.id,
-                            ...profile.media
-                              .filter(item => item.id !== media.id)
-                              .map(item => item.id),
-                          ],
-                        });
-                        await load();
-                        onSaved();
-                      })
-                    }
-                  />
-                )}
-              </View>
-            ))}
+            <View style={styles.mediaGrid}>
+              {profile.media.map((media, index) => (
+                <View key={media.id} style={[styles.mediaItemCard, { backgroundColor: p.soft, borderColor: p.border }]}>
+                  {media.kind === 'image' && (
+                    <Image
+                      source={api.mediaSource(media.url)}
+                      accessibilityLabel={`Ảnh ${index + 1}`}
+                      style={styles.mediaThumb}
+                    />
+                  )}
+                  <View style={styles.mediaActions}>
+                    <Button
+                      compact
+                      label={`Xoá ảnh ${index + 1}`}
+                      disabled={task.busy}
+                      onPress={() =>
+                        confirmAction('Xoá ảnh?', 'Ảnh sẽ xoá khỏi hồ sơ.', () => {
+                          void task.run(async () => {
+                            await api.request(`/v1/me/media/${media.id}`, 'DELETE');
+                            await syncMediaOnly();
+                          });
+                        })
+                      }
+                    />
+                    {index > 0 && (
+                      <Button
+                        compact
+                        label={`Đưa ảnh ${index + 1} lên đầu`}
+                        disabled={task.busy}
+                        onPress={() =>
+                          task.run(async () => {
+                            await api.request('/v1/me/media/order', 'PATCH', {
+                              mediaIds: [
+                                media.id,
+                                ...profile.media
+                                  .filter(item => item.id !== media.id)
+                                  .map(item => item.id),
+                              ],
+                            });
+                            await syncMediaOnly();
+                          })
+                        }
+                      />
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
             <Button
               label="Chọn ảnh / tải lên"
-              disabled={task.busy || profile.media.length >= 9 || dirty}
+              disabled={task.busy || profile.media.length >= 9}
               onPress={() =>
                 task.run(async () => {
                   const form = await pickImage();
                   if (form) {
                     await api.request('/v1/me/media', 'POST', form);
-                    await load();
-                    onSaved();
+                    await syncMediaOnly();
                   }
                 })
               }
             />
           </Panel>
-          <Panel>
+
+          {/* Location Section */}
+          <Panel style={styles.sectionCard}>
             <Title>Vị trí riêng</Title>
             <Label muted>
               Chỉ lấy GPS sau thao tác của bạn. Không tự gửi vị trí cho người
               khác.
             </Label>
-            <Button
-              label="Lấy GPS / xem trước"
-              disabled={task.busy}
-              onPress={() =>
-                task.run(async () => {
-                  const location = await currentLocation();
-                  Alert.alert(
-                    'Đồng ý lưu vị trí riêng?',
-                    `${location.latitude.toFixed(
-                      5,
-                    )}, ${location.longitude.toFixed(
-                      5,
-                    )}. Chỉ dùng lọc khám phá.`,
-                    [
-                      { text: 'Hủy', style: 'cancel' },
-                      {
-                        text: 'Đồng ý lưu',
-                        onPress: () => {
-                          void task.run(async () => {
-                            await api.request('/v1/me/location', 'PUT', {
-                              ...location,
-                              consent: true,
-                            });
-                            onSaved();
-                            task.setNotice('Đã lưu vị trí riêng.');
-                          });
-                        },
-                      },
-                    ],
-                  );
-                })
-              }
-            />
-            <Button
-              label="Thu hồi / xoá vị trí riêng"
-              disabled={task.busy}
-              onPress={() =>
-                task.run(async () => {
-                  await api.request('/v1/me/location', 'DELETE');
-                  onSaved();
-                  task.setNotice('Đã thu hồi vị trí riêng.');
-                })
-              }
-            />
-          </Panel>
-          <Panel>
-            <Title>Selfie mô phỏng</Title>
-            <Label muted>
-              Workflow DEMO, không xác minh danh tính thật. UI-test chọn ảnh
-              thay cho màn camera đầy đủ.
-            </Label>
-            <Button
-              label="Đồng ý chọn / gửi ảnh selfie DEMO"
-              disabled={task.busy}
-              onPress={() =>
-                task.run(async () => {
-                  const form = await pickImage();
-                  if (form) {
-                    setVerification(
-                      JSON.stringify(
-                        (
-                          await api.request(
-                            '/v1/me/verification/selfie',
-                            'POST',
-                            form,
-                          )
-                        ).data,
-                      ),
-                    );
-                  }
-                })
-              }
-            />
-            <Button
-              label="Đọc trạng thái xác minh"
-              disabled={task.busy}
-              onPress={() =>
-                task.run(async () => {
-                  setVerification(
-                    JSON.stringify(
-                      (await api.request('/v1/me/verification')).data,
-                    ),
-                  );
-                })
-              }
-            />
-            {!!verification && <Label>{verification}</Label>}
+            <View style={styles.locationGroup}>
+              <Button
+                label="Lấy GPS / xem trước"
+                disabled={task.busy}
+                onPress={() =>
+                  task.run(async () => {
+                    const requestEpoch = epoch.current;
+                    const location = await currentLocation();
+                    if (requestEpoch !== epoch.current) { return; }
+                    const consent = await new Promise<boolean>(resolve => {
+                      Alert.alert(
+                        'Đồng ý lưu vị trí riêng?',
+                        `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}. Chỉ dùng lọc khám phá.`,
+                        [
+                          { text: 'Hủy', style: 'cancel' },
+                          { text: 'Đồng ý lưu', onPress: () => resolve(true) },
+                        ],
+                        { cancelable: true, onDismiss: () => resolve(false) },
+                      );
+                    });
+                    if (!consent || requestEpoch !== epoch.current) { return; }
+                    await api.request('/v1/me/location', 'PUT', { ...location, consent: true });
+                    if (requestEpoch !== epoch.current) { return; }
+                    onSavedRef.current();
+                    task.setNotice('Đã lưu vị trí riêng.');
+                  })
+                }
+              />
+              <Button
+                label="Mở cài đặt vị trí"
+                disabled={task.busy}
+                onPress={() => task.run(openLocationSettings)}
+              />
+              <Button
+                label="Thu hồi / xoá vị trí riêng"
+                disabled={task.busy}
+                onPress={() =>
+                  task.run(async () => {
+                    const requestEpoch = epoch.current;
+                    await api.request('/v1/me/location', 'DELETE');
+                    if (requestEpoch !== epoch.current) { return; }
+                    onSavedRef.current();
+                    task.setNotice('Đã thu hồi vị trí riêng.');
+                  })
+                }
+              />
+            </View>
           </Panel>
         </>
       )}
     </Page>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRow: {
+    gap: 10,
+    marginBottom: 4,
+  },
+  sectionCard: {
+    padding: 18,
+    gap: 14,
+    borderRadius: 20,
+  },
+  alertCard: {
+    padding: 16,
+    gap: 8,
+    borderRadius: 18,
+    backgroundColor: 'rgba(220, 38, 38, 0.05)',
+    borderColor: '#DC2626',
+  },
+  statusPill: {
+    paddingHorizontal: 4,
+  },
+  saveWrap: {
+    marginVertical: 4,
+  },
+  mediaGrid: {
+    gap: 14,
+  },
+  mediaItemCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+    alignItems: 'center',
+  },
+  mediaThumb: {
+    width: 120,
+    height: 120,
+    borderRadius: 14,
+  },
+  mediaActions: {
+    width: '100%',
+    gap: 8,
+  },
+  locationGroup: {
+    gap: 10,
+  },
+});

@@ -1,34 +1,49 @@
-# Báo cáo trạng thái hiện tại — React Native CLI / Firestore
+# Trạng thái và kiểm chứng — 02/11/2026
 
-Ngày 01/11/2026. **Đã có core chạy với Firestore Emulator; chưa kết nối Cloud Firestore thật vì chưa có Firebase project/credential.** Đây không phải báo cáo hoàn tất 37 chức năng hoặc duyệt FE-product.
+Core React Native CLI + Fastify + Firestore đang hoạt động trong phạm vi demo P01–P05. **Không đồng nghĩa hoàn thành 37 chức năng hoặc duyệt visual FE-product.**
 
-## Đã thực hiện
+## Bản hiện tại D15
 
-- React Native Community CLI20.2.0, RN0.88.1, Android native project; không Expo. Fastify primary server dùng Firebase Admin SDK14.5.0/Firestore.
-- Auth/session và OTP demo có rate/expiry/replay; hồ sơ, ảnh tối đa9, bộ lọc, vị trí riêng có đồng ý; mutual match transaction; chat lưu document/idempotency/cursor/realtime; unmatch/block/report và private read/unmatch record.
-- UI-test có nút gọi API thật, loading/error/retry, secure local session, đổi tài khoản không giữ chat/draft, keyboard Android, profile save guard, safety/swipe serialization và fast-send payload.
-- Scripts kiểm tra kết nối, seed create-only, chạy native app/API/Metro; cloud thiếu cấu hình fail rõ, emulator chọn riêng. Direct client Firestore rules deny all; admin credential chỉ BE.
+[Màn thật và nhận diện Gặp/Mầm](product-ui-2026-11-02.md) thay bản thử kính/nền biển: Firebase SDK email/Google không demo fallback; nội dung giấy đặc, bar kính, mascot/nền mới. Native build/install đạt,55 mobile đạt; SDK API19/19+guard4/4 và realSDKemulator smoke đạt; Web/Android SDK config đã cấp theo quyền USER, Google thật chưa kiểm bằng tài khoản. Các mục dưới giữ evidence D14 lịch sử, không mô tả UI hiện tại.
 
-## Bằng chứng kiểm tra
+## Lượt dọn code và UI-test trước visual mới
 
-| Nhóm | Kết quả và giới hạn |
+- Gỡ backend SQL unreachable, migrations và SQL-only tests; tách helper dùng chung sang `apps/api/src/shared.ts`. Server chỉ dùng Firestore; không fallback.
+- Sửa PATCH hồ sơ: cập nhật một trường lifestyle giữ các trường khác, kể cả hai cập nhật đồng thời. Regression đã fail trước sửa (15 pass/1 fail), pass sau sửa.
+- Bổ sung chào mừng → đăng nhập/đăng ký → OTP → hồ sơ đầu tiên. SMS có nhãn demo; cùng API verify tạo mới hoặc đăng nhập. Sửa lỗi không hủy được hồ sơ đang tạo khi phiên hết hạn/mất mạng.
+- GlassProvider/GlassSurface cho điều khiển nổi, nền/viền sáng và light/dark; Android dùng fallback bán trong suốt, high text contrast dùng nền đặc. Nội dung form vẫn dễ đọc. Không phải native iOS refraction.
+- Lệnh `be`, `fe`, `demo`; FE dùng API chung không cần key. README ngắn, bàn giao có danh sách BE còn việc. Báo cáo worker/API SQL/skill Expo cũ chuyển ignored `.local/`, giữ nguyên nguồn yêu cầu và evidence.
+- Generator OpenAPI đồng bộ health/capabilities/profile/pagination/OTP/register/read-cursor; tài liệu đã được generate lại.
+
+| Kiểm tra mới | Kết quả |
 |---|---|
-| Root verify | Typecheck/ESLint đạt; Firestore15/15 pass,0skip; mobile19/19 trong cùng run |
-| Mobile sau sửa cuối | Typecheck/ESLint đạt;20/20 tests,0snapshot; regression fast-send có RED→GREEN |
-| HTTP smoke | Firestore Emulator: A/B auth→discovery→mutual match→chat persisted→C denied→block revoke đạt |
-| Android | x86_64 debug build/install đã đạt (JDK21, SDK37, Gradle9.4.1); app gọi API Firestore Emulator, gửi tin, B HTTP đọc/phản hồi, A nhận realtime; IME không che Send |
-| Truy cập trực tiếp | REST client không auth vào emulator nhận403; không phải bằng chứng rules đã deploy cloud |
-| Clone | Firestore snapshot `b82acd3`, thư mục có dấu cách: npmci1517 packages/38s, setup, typecheck và emulator HTTP smoke đạt; chưa clean native build/cloud |
-| Cloud | Chưa có project/credential; chưa thực hiện cloud read/write, seed, deploy rules/indexes |
+| `npm run verify` trước bản sửa hủy hồ sơ cuối | Exit 0: typecheck/lint, startup 2/2, Firestore 16/16 (0 skipped), mobile 23/23 |
+| Android debug | `npm run android`: BUILD SUCCESSFUL, cài `com.gapmobile` trên Pixel_9 Android16 x86_64; JDK21. Có cảnh báo deprecation Gradle/AGP, không phải build error. |
+| Rà soát Standards | Không lỗi API/runtime; phát hiện QA doc mô tả SQL cũ, đã viết lại báo cáo này. |
+| Rà soát Spec | Phát hiện P2 hủy hồ sơ khi logout401/network; sửa và kiểm regression riêng sau đó. |
 
-## Phần chưa hoàn tất
+Sau sửa cuối: root chạy lại mobile typecheck/lint (exit0) và Jest **4 suites/25 tests pass**, bao gồm hủy hồ sơ với logout401 hoặc lỗi mạng. API/scripts không đổi sau full verify16/2, không chạy lại suite không liên quan.
 
-- Tạo project Firebase riêng, cấu hình BE, deploy indexes/rules, kiểm kết nối và dữ liệu chung qua cloud. Hướng dẫn: [12-ket-noi-firestore.md](../12-ket-noi-firestore.md).
-- Phần mở rộng P06–P10 có source SQLite tham chiếu và kiểm tra cục bộ riêng; chưa port đầy đủ sang Firestore, không nằm trong primary app. Không tự lấy số bài test SQL để nghiệm thu DB mới.
-- Video/profile duration validation; GIF/sticker hiện là catalog label, chưa animated; OAuth, AI thật, music và calendar cloud cần provider/config và phase riêng. OTP/selfie mặc định ghi rõ demo, không có xác minh chính chủ thật.
-- Media metadata ở Firestore, ảnh trên filesystem BE có auth; chưa có Cloud Storage. Đồng bộ socket message giữa nhiều backend chưa có; demo dùng một backend.
-- Chưa kiểm iOS build, hai thiết bị Android, TalkBack/font200%, toàn bộ native permissions và FE-product Liquid Glass hoàn chỉnh.
+Native smoke mới trên Pixel9: đăng ký bằng số hư cấu ở emulator → OTP demo → hồ sơ đầu tiên (DOB2000-01-01) → lưu thành công → Khám phá với ảnh fixture và socket báo realtime connected → đăng xuất có xác nhận → về màn chào mừng. Đã xem ảnh light/dark, không có overflow ở các màn đã đi qua. Ảnh: [welcome sáng](native-ui-welcome-2026-11-02.png), [welcome tối](native-ui-dark-2026-11-02.png). Đây là một emulator, không là sign-off đầy đủ font200%/TalkBack/native permissions/keyboard.
 
-## Bước tiếp theo
+Prototype web12 màn được worker kiểm bằng Edge: luồng auth→profile→discovery, 12 màn không rỗng, viewport412px không overflow ngang, console0errors/0warnings; dark/opaque toggles đã xem. Root đã đọc diff; đây không thay thế nghiệm thu native.
 
-Chủ dự án tạo Firebase project và cấu hình credential local theo docs12 (không gửi khóa bí mật vào chat/Git). Khi có Project ID và quyền backend đúng project, chạy `firestore:check`, seed tường minh rồi nghiệm thu cloud A/B/C. FE chỉ cần URL API dùng chung, không cần admin key. Các phase và checklist còn mở cho tới khi có artifact/bằng chứng tương ứng.
+`git diff --check` đạt; không link Markdown nội bộ hỏng; giữ đủ37F/60S. `.env.local`, service account, `.local/` và `.vscode/` được Git ignore. Chưa commit/push/deploy. Lượt này không chạy ghi/xóa/seed/deploy cloud; test chỉ dùng emulator. Demo emulator đã dừng sau kiểm tra để không để lại backend test chạy ngầm.
+
+## Evidence lịch sử còn giá trị
+
+- [Cloud setup/HTTP](cloud-setup-2026-11-02.md): project `app-cuoi-ky-2d653`, check read-only, explicit create-only seed; deny-all rules, indexes READY; A/B/C HTTP ownership, race/retry/persistence/block/unmatch.
+- [Native cloud](native-cloud-2026-11-02.md): một Pixel9 emulator + HTTP companion; profile save, mutual match/chat/realtime, account switch, app/API OS-process restart, unmatch/socket revoke. Có ảnh và giới hạn cụ thể.
+- Bản archive Firestore `b82acd3` trước cleanup từng qua npmci/setup/typecheck/emulator smoke trong thư mục có dấu cách; không là clean native build của bản mới.
+
+Không dùng kết quả test SQL hoặc evidence cũ để khẳng định feature Firestore mới đã hoàn thành.
+
+## Việc còn mở
+
+- Hai Android client thật đồng thời, đầy đủ GPS/gallery/camera permissions, TalkBack, font200%, bàn phím và high-contrast trên thiết bị; iOS chưa build.
+- Video chưa có duration validation; GIF/sticker mới catalog label; ảnh nằm trên filesystem BE có auth, chưa Cloud Storage.
+- OAuth/SMS/AI/music/calendar thật cần provider/config và phase tương ứng. Selfie mới nộp ảnh private pending/demo; policy reviewer/retention chưa chốt.
+- P06–P10 chưa triển khai Firestore. Source SQL cũ chỉ còn trong Git history/local notes, không còn trong API active.
+- Socket nhiều backend, HTTPS/production vận hành và chính sách retention chưa nghiệm thu. FE-product visual chưa duyệt.
+
+Lệnh chạy và cấu hình: [README](../../README.md). Danh sách bàn giao: [BE → FE](../handoff/be-to-fe.md).

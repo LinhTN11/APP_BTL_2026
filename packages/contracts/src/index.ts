@@ -49,6 +49,13 @@ export interface Session {
   expiresAt: string;
   user: User;
 }
+export interface FirebaseExchange { idToken: string }
+export interface FirebaseClientConfig { apiKey: string; appId: string; authDomain: string; projectId: string }
+export interface AuthMethods {
+  firebase: { mode: "real"; config: FirebaseClientConfig } | { mode: "unavailable"; reason: string };
+  email: { mode: "real" } | { mode: "unavailable"; reason: string };
+  google: { mode: "real"; webClientId: string } | { mode: "unavailable"; reason: string };
+}
 export interface Media {
   id: string;
   kind: "image" | "video";
@@ -95,12 +102,16 @@ export interface Message {
   payload?: Record<string, unknown>;
   createdAt: string;
 }
+export type ProfileRequirement = "displayName" | "dateOfBirth" | "bio" | "media";
 export interface ApiSuccess<T> {
   data: T;
   meta?: {
     nextCursor: string | null;
     radiusAvailable?: boolean;
     reason?: string;
+    emptyReason?: string;
+    ownProfileComplete?: boolean;
+    missingRequirements?: ProfileRequirement[];
   };
 }
 export interface ApiError {
@@ -127,6 +138,7 @@ export interface Verification {
   mode: "demo";
   submittedAt?: string;
 }
+export type LifestylePatch = { [K in keyof Lifestyle]?: Lifestyle[K] | null };
 export type ProfilePatch = Partial<
   Pick<
     Profile,
@@ -136,10 +148,9 @@ export type ProfilePatch = Partial<
     | "bio"
     | "datingGoal"
     | "interests"
-    | "lifestyle"
     | "advanced"
   >
->;
+> & { lifestyle?: LifestylePatch };
 export type PreferencesPatch = Partial<Preferences>;
 export interface LocationInput {
   latitude: number;
@@ -178,4 +189,8 @@ export type SocketSubscribeAck =
 export interface MatchEndedEvent {
   matchId: string;
   reason: "blocked" | "unmatched";
+}
+/** Notification only; reconcile authorized membership through GET /v1/matches. */
+export interface MatchCreatedEvent {
+  matchId: string;
 }

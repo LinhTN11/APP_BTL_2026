@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { randomBytes, randomInt } from "node:crypto";
 import { FirestoreContext, fail, hash, uid } from "./context.js";
-import { object, enumString, str, uuid } from "./schemas.js";
+import { object, enumString, str, uuid } from "../schemas.js";
+import { registerFirebaseAuth } from "./firebase-auth.js";
 
 export const defaultPreferences = () => ({
   genders: ["female", "male", "other"],
@@ -35,7 +36,7 @@ export async function authenticate(ctx: FirestoreContext, token?: string) {
   )
     return fail(401, "SESSION_EXPIRED", "Phiên đăng nhập không còn hiệu lực");
   const user = (await ctx.ref("users", session.userId).get()).data();
-  if (!user || user.accountStatus !== "active")
+  if (!ctx.availableUser(user) || (!ctx.config.demoMode && session.mode === "demo"))
     return fail(401, "SESSION_EXPIRED", "Phiên đăng nhập không còn hiệu lực");
   return {
     userId: session.userId as string,
@@ -59,6 +60,7 @@ async function session(ctx: FirestoreContext, userId: string) {
       expiresAt,
       revokedAt: null,
       createdAt: ctx.date(),
+      mode: "demo",
     });
     return { id: userId, displayName: p.data()!.displayName };
   });
@@ -68,6 +70,7 @@ export function registerFirestoreAuth(
   app: FastifyInstance,
   ctx: FirestoreContext
 ) {
+  registerFirebaseAuth(app, ctx);
   app.get("/v1/demo/accounts", async () => {
     if (!ctx.config.demoMode) fail(404, "NOT_FOUND", "Demo đã tắt");
     const result = [];
@@ -218,6 +221,7 @@ export function registerFirestoreAuth(
         tx.create(ctx.ref("sessions", sessionKey), {
           userId,
           expiresAt,
+          mode: "demo",
           revokedAt: null,
           createdAt: ctx.date(),
         });

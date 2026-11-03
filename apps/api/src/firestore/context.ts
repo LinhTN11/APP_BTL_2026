@@ -5,14 +5,15 @@ import {
   type App,
 } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 import type { Server } from "socket.io";
 import { mkdir } from "node:fs/promises";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import { fail } from "../domain.js";
-export { ApiError, fail, hash, uid } from "../domain.js";
+import { fail } from "../shared.js";
+export { ApiError, fail, hash, uid } from "../shared.js";
 
 export interface FirestoreOptions {
   projectId?: string;
@@ -28,6 +29,7 @@ export interface FirestoreOptions {
 }
 export class FirestoreContext {
   io!: Server;
+  readonly firebaseAuth;
   readonly root;
   readonly config;
   readonly database;
@@ -36,6 +38,7 @@ export class FirestoreContext {
     private adminApp: App,
     options: FirestoreOptions & { projectId: string; emulatorHost?: string }
   ) {
+    this.firebaseAuth = getAuth(adminApp);
     const namespace = options.namespace ?? "app-cuoi-ky";
     this.root = db.collection("projects").doc(namespace);
     this.config = {
@@ -62,7 +65,14 @@ export class FirestoreContext {
   date() {
     return new Date(this.config.now()).toISOString();
   }
-  age(dob: string) {
+  age(dob: unknown) {
+    if (typeof dob !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return 0;
+    const parsed = new Date(dob + "T00:00:00Z");
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== dob
+    )
+      return 0;
     const now = new Date(this.config.now());
     return (
       now.getUTCFullYear() -
@@ -70,9 +80,14 @@ export class FirestoreContext {
       (now.toISOString().slice(5, 10) < dob.slice(5) ? 1 : 0)
     );
   }
+  availableUser(user: { accountStatus?: unknown; demoAccount?: unknown; mode?: unknown } | undefined) {
+    return !!user && user.accountStatus === "active" &&
+      (this.config.demoMode || (!user.demoAccount && user.mode !== "demo"));
+  }
   async user(id: string) {
-    const p = (await this.ref("profiles", id).get()).data();
-    if (!p) return fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
+    const [user, profile] = await this.db.getAll(this.ref("users", id), this.ref("profiles", id));
+    const p = profile.data();
+    if (!this.availableUser(user.data()) || !p) return fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
     return { id, displayName: p.displayName };
   }
   async blocked(a: string, b: string) {
@@ -85,7 +100,7 @@ export class FirestoreContext {
   async target(actor: string, id: string) {
     if (actor === id) fail(422, "SELF_ACTION", "Không thể chọn chính mình");
     const u = (await this.ref("users", id).get()).data();
-    if (!u || u.accountStatus !== "active")
+    if (!this.availableUser(u))
       fail(404, "NOT_FOUND", "Không tìm thấy hồ sơ");
   }
   async profile(id: string, own = false): Promise<any> {
@@ -124,6 +139,15 @@ export async function createFirestoreContext(options: FirestoreOptions = {}) {
   if (!/^[a-z0-9-]{1,48}$/.test(namespace))
     throw new Error("FIRESTORE_NAMESPACE must match [a-z0-9-]{1,48}.");
   const envEmulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+  // Admin Auth accepts unsigned tokens when this variable is set. Never let a
+  // Firestore cloud process silently inherit an Auth emulator configuration.
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST && !options.emulatorHost && mode !== "firestore-emulator")
+    throw new Error("FIREBASE_AUTH_EMULATOR_HOST requires explicit Firestore emulator mode; cloud must verify signed Firebase tokens.");
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    const authHost = /^(localhost|127\.0\.0\.1|\[::1\]):([0-9]{1,5})$/.exec(process.env.FIREBASE_AUTH_EMULATOR_HOST);
+    if (!authHost || Number(authHost[2]) < 1 || Number(authHost[2]) > 65535)
+      throw new Error("Firebase Auth emulator host must be an explicit loopback host:port.");
+  }
   if (
     mode === "firestore-emulator" &&
     !options.emulatorHost &&
@@ -161,6 +185,13 @@ export async function createFirestoreContext(options: FirestoreOptions = {}) {
       );
     process.env.FIRESTORE_EMULATOR_HOST = emulatorHost;
   }
+  const demoMode = options.demoMode ?? process.env.DEMO_MODE === "true";
+  const seedDemo = options.seedDemo || process.env.FIRESTORE_SEED_DEMO === "true";
+  if (process.env.NODE_ENV === "production" && (emulatorHost || process.env.FIREBASE_AUTH_EMULATOR_HOST || demoMode || seedDemo))
+    throw new Error("Production rejects emulator, demo and seed configuration.");
+  if ((demoMode || seedDemo) && !emulatorHost)
+    throw new Error("Demo and seed require explicit Firestore emulator mode.");
+  if (seedDemo && !demoMode) throw new Error("Demo seeding requires explicit DEMO_MODE=true.");
   if (!emulatorHost && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     if (!isAbsolute(process.env.GOOGLE_APPLICATION_CREDENTIALS))
       throw new Error(

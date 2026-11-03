@@ -1,5 +1,7 @@
 # Đặc tả yêu cầu sản phẩm app hẹn hò
 
+> Cách đọc hiện tại (03/11/2026): giữ đủ nguồn ORIGINAL và đề xuất ở đây; [ma trận BE](backend/requirements.md) đối chiếu từng năng lực với code/gap. Các nhãn MVP/demo dưới đây là kế hoạch ban đầu. D17 thay auth bằng Firebase SDK email/Google; D20 chỉ cho dữ liệu thật ở cloud, provider thiếu trả unavailable. Không dùng demo session/fixture trong product cloud. Full BE 37F chưa hoàn tất.
+
 Ngày soạn: 01/11/2026. Trạng thái: **bản phân tích để duyệt**, chưa phải bằng chứng đã triển khai.
 
 ## 1. Cách đọc và nguồn yêu cầu
@@ -16,7 +18,7 @@ Nguồn Word được giữ nguyên tại `docs/source/DANH SÁCH CHỨC NĂNG A
 
 ## 2. Mục tiêu và ranh giới
 
-Mục tiêu demo trong ngày BE: hai tài khoản trưởng thành tạo hồ sơ, khám phá nhau, Like tạo Match, trò chuyện, chia sẻ thông tin có đồng ý, và có thể Unmatch/Block/Report. D12 chọn Cloud Firestore làm DB chính: nhóm dùng chung backend/API, BE setup Firebase project riêng và quyền truy cập một lần; FE chỉ cần API URL. Project/credentials hiện chưa có, cloud đọc/ghi chưa kiểm chứng. Backend phải thực sự xử lý/lưu bằng Firestore; không dùng mock phản hồi cho các nghiệp vụ này. FE hoàn thiện UI trong một ngày riêng; ngày BE chỉ cần UI thử có đủ nút cho hành trình. Toàn bộ 37 chức năng được giữ trong backlog đầy đủ, không cam kết mọi tích hợp ngoài hoàn thành trong ngày.
+Mục tiêu demo trong ngày BE: hai tài khoản trưởng thành tạo hồ sơ, khám phá nhau, Like tạo Match, trò chuyện, chia sẻ thông tin có đồng ý, và có thể Unmatch/Block/Report. D12 chọn Cloud Firestore làm DB chính; D13 cho phép setup credential Admin SDK riêng trên BE; FE chỉ cần API URL. Project/credential đã cấu hình, check/seed đạt và bounded HTTP A/B/C cloud smoke pass. Smoke không bao gồm process-level restart, hai thiết bị Android, Socket.IO cloud hoặc FE-product. Backend phải thực sự xử lý/lưu bằng Firestore; không dùng mock phản hồi cho các nghiệp vụ này. FE hoàn thiện UI trong một ngày riêng; ngày BE chỉ cần UI thử có đủ nút cho hành trình. Toàn bộ 37 chức năng được giữ trong backlog đầy đủ, không cam kết mọi tích hợp ngoài hoàn thành trong ngày. Xem [evidence cloud setup](qa/cloud-setup-2026-11-02.md).
 
 `PROPOSAL`: chỉ dành cho người **từ 18 tuổi**; dùng dữ liệu và ảnh mẫu có quyền sử dụng. Phiên bản demo không xác minh danh tính pháp lý, không cam kết cứu hộ, không xử lý tiền thật. Cần chủ dự án duyệt các ranh giới này trước khi phát triển các tích hợp tương ứng; xem [sổ quyết định](07-cau-hoi-va-quyet-dinh.md).
 
